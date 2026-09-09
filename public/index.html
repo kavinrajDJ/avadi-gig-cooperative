@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Avadi Cooperative Hyperlocal App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Leaflet OpenStreetMap CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 1050px; margin: 0 auto; }
+    .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); margin-bottom: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px; }
+    button { cursor: pointer; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 600; font-size: 14px; transition: 0.2s; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-green { background: #16a34a; color: #fff; }
+    .btn-danger { background: #dc2626; color: #fff; }
+    .btn-secondary { background: #64748b; color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: #334155; }
+    .input-field { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-accepted { background: #dcfce7; color: #166534; }
+    .badge-completed { background: #e0e7ff; color: #3730a3; }
+    .badge-rejected { background: #fee2e2; color: #991b1b; }
+    .badge-fair { background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc; }
+    .badge-verified { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 11px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; text-align: center; }
+    .filter-group { display: flex; gap: 10px; margin-bottom: 20px; }
+    .list-item { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; }
+    .list-item-row { display: flex; justify-content: space-between; align-items: center; }
+    .otp-box { background: #eff6ff; border: 1px dashed #3b82f6; padding: 6px 12px; border-radius: 6px; font-family: monospace; font-size: 15px; font-weight: bold; color: #1d4ed8; }
+    .toggle-switch { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f8fafc; color: #475569; font-weight: 600; }
+    .rate-pill { background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 13px; font-weight: bold; color: #0f172a; border: 1px solid #cbd5e1; }
+    .live-pulse { display: inline-block; width: 8px; height: 8px; background: #16a34a; border-radius: 50%; margin-right: 4px; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
+    #toast-banner { display: none; position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; }
+    .map-box { height: 220px; width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #cbd5e1; z-index: 10; }
+  </style>
+</head>
+<body>
+  <div id="toast-banner"></div>
+  <div class="container">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+      <button class="btn-outline" onclick="openAdminAudit()" style="font-weight: bold; background: #fff;">
+        📊 Avadi Federation Audit Dashboard
+      </button>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 12px; color: #64748b;"><span class="live-pulse"></span>Live Real-Time Sync</span>
+        <button class="btn-outline" onclick="toggleLanguage()" id="lang-btn">🌐 தமிழ் / English</button>
+      </div>
+    </div>
+
+    <!-- Auth View -->
+    <div id="auth-view" class="card" style="max-width: 460px; margin: 30px auto;">
+      <h2 id="t-auth-title" style="margin-top: 0;">Login to Avadi Gig Portal</h2>
+      <input id="auth-email" class="input-field" type="email" placeholder="Email address" />
+      
+      <div id="register-fields" style="display: none;">
+        <input id="auth-name" class="input-field" type="text" placeholder="Full Name" />
+        <select id="auth-role" class="input-field" onchange="toggleRoleFields()">
+          <option value="customer" id="t-opt-customer">Customer (Seeking Services)</option>
+          <option value="provider" id="t-opt-provider">Provider (Worker / Cooperative Member)</option>
+        </select>
+        
+        <div id="provider-details" style="display: none;">
+          <input id="auth-service" class="input-field" type="text" placeholder="Trade (e.g. Electrician, Plumber)" />
+          <input id="auth-area" class="input-field" type="text" placeholder="Avadi Locality (e.g. Gandhi Nagar)" />
+          
+          <label style="font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">
+            💰 Your Standard Service Rate (₹)
+          </label>
+          <input id="auth-base-rate" class="input-field" type="number" value="250" placeholder="Set your fixed rate (e.g. 250, 300)" />
+
+          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+            <label style="font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">
+              🛡️ Cooperative Identity Verification
+            </label>
+            <select id="auth-id-type" class="input-field" style="margin-bottom: 8px;" onchange="updateIdPlaceholder()">
+              <option value="aadhaar">Aadhaar Card (12 Digits)</option>
+              <option value="pan">PAN Card (10 Characters)</option>
+            </select>
+            <input id="auth-id-number" class="input-field" style="margin-bottom: 4px;" type="text" placeholder="Enter 12-digit Aadhaar Number" />
+            <small style="font-size: 11px; color: #64748b;">Masked & stored for statutory cooperative compliance.</small>
+          </div>
+        </div>
+      </div>
+
+      <button id="auth-submit" class="btn-primary" style="width: 100%;" onclick="handleAuth()">Login</button>
+      <p style="text-align: center; margin-top: 14px; font-size: 14px;">
+        <a href="javascript:void(0)" id="auth-toggle" onclick="toggleAuthMode()">Don't have an account? Register</a>
+      </p>
+    </div>
+
+    <!-- Customer Dashboard -->
+    <div id="customer-view" style="display: none;">
+      <div class="card">
+        <div class="header">
+          <div>
+            <h2 id="t-cust-title">Customer Portal</h2>
+            <p style="margin: 4px 0 0 0; color: #64748b;">Welcome, <span id="cust-name"></span></p>
+          </div>
+          <button class="btn-secondary" onclick="logout()">Logout</button>
+        </div>
+
+        <h3 id="t-find-heading">Find Registered Cooperative Providers</h3>
+        <p style="font-size: 13px; color: #64748b; margin: 4px 0 16px 0;" id="t-fair-desc">
+          ⚡ Only <strong>active, on-duty</strong> providers ranked via Fair Job Distribution.
+        </p>
+
+        <div class="filter-group">
+          <input id="search-input" class="input-field" style="margin: 0; flex: 2;" type="text" placeholder="Search by service or worker name..." oninput="filterProviders()" />
+          <select id="locality-select" class="input-field" style="margin: 0; flex: 1;" onchange="filterProviders()">
+            <option value="">All Avadi Areas</option>
+            <option value="Gandhi Nagar">Gandhi Nagar</option>
+            <option value="HVF Road">HVF Road</option>
+            <option value="Avadi Checkpost">Avadi Checkpost</option>
+            <option value="Pattabiram">Pattabiram</option>
+            <option value="Mitnamalli">Mitnamalli</option>
+          </select>
+        </div>
+
+        <div id="providers-list"></div>
+      </div>
+
+      <div class="card">
+        <h3 id="t-booked-heading">Your Booked Requests & Real-Time Tracking</h3>
+        <p style="font-size: 13px; color: #64748b; margin: 4px 0 16px 0;" id="t-otp-desc">
+          When accepted, your worker's live location and dynamic route stream below. Share OTP only when completed.
+        </p>
+        <div id="customer-orders-list"></div>
+      </div>
+    </div>
+
+    <!-- Provider Dashboard -->
+    <div id="provider-view" style="display: none;">
+      <div class="card">
+        <div class="header">
+          <div>
+            <h2 id="t-prov-title">Provider Workstation</h2>
+            <p style="margin: 4px 0 0 0; color: #64748b;">
+              Welcome, <span id="prov-name"></span> (<span id="prov-trade"></span>) 
+              <span id="prov-badge-container"></span>
+            </p>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <label class="toggle-switch">
+              <input type="checkbox" id="avail-toggle" onchange="toggleAvailability(this.checked)" checked>
+              <span id="avail-label" style="color: #16a34a;">🟢 Duty: Available</span>
+            </label>
+            <button class="btn-secondary" onclick="logout()">Logout</button>
+          </div>
+        </div>
+
+        <!-- Rate Bar -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>💼 Your Fixed Service Rate</strong>
+            <div style="font-size: 13px; color: #64748b;">Update anytime. Customers immediately see your new rate.</div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span style="font-size: 16px; font-weight: bold;">₹</span>
+            <input id="my-fixed-rate" type="number" style="width: 110px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: bold;" />
+            <button class="btn-primary" id="btn-update-rate" onclick="updateMyRate()">Update Rate</button>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <p style="color: #64748b; font-size: 13px; margin: 0;" id="t-stat-completed">Completed Jobs</p>
+            <h2 id="stat-jobs" style="margin-top: 4px;">0</h2>
+          </div>
+          <div class="stat-card">
+            <p style="color: #64748b; font-size: 13px; margin: 0;" id="t-stat-payout">Direct Payout (98%)</p>
+            <h2 id="stat-earnings" style="color: #16a34a; margin-top: 4px;">₹0</h2>
+          </div>
+          <div class="stat-card">
+            <p style="color: #64748b; font-size: 13px; margin: 0;" id="t-stat-welfare">Welfare Fund (2%)</p>
+            <h2 id="stat-welfare" style="color: #2563eb; margin-top: 4px;">₹0</h2>
+          </div>
+          <div class="stat-card">
+            <p style="color: #64748b; font-size: 13px; margin: 0;" id="t-stat-trust">Trust Rating</p>
+            <h2 id="stat-rating" style="color: #ca8a04; margin-top: 4px;">5.0 ★</h2>
+          </div>
+        </div>
+
+        <h3 id="t-prov-incoming">Incoming Customer Bookings & Destination Map</h3>
+        <div id="provider-orders-list" style="margin-top: 16px;"></div>
+      </div>
+    </div>
+
+    <!-- Admin View -->
+    <div id="admin-view" style="display: none;">
+      <div class="card">
+        <div class="header">
+          <div>
+            <h2>🏛️ Avadi Municipal Cooperative Federation Audit</h2>
+            <p style="margin: 4px 0 0 0; color: #64748b;">Regulatory compliance, financial transparency & workload fairness ledger</p>
+          </div>
+          <button class="btn-secondary" onclick="closeAdminAudit()">Back to App</button>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <p style="color: #64748b; font-size: 13px; margin: 0;">Gross Municipal Volume</p>
+            <h2 id="adm-gmv" style="margin-top: 4px; color: #0f172a;">₹0</h2>
+          </div>
+          <div class="stat-card">
+            <p style="color: #64748b; font-size: 13px; margin: 0;">Cooperative Welfare Escrow (2%)</p>
+            <h2 id="adm-welfare" style="color: #2563eb; margin-top: 4px;">₹0</h2>
+          </div>
+          <div class="stat-card">
+            <p style="color: #64748b; font-size: 13px; margin: 0;">Direct Worker Payouts (98%)</p>
+            <h2 id="adm-payout" style="color: #16a34a; margin-top: 4px;">₹0</h2>
+          </div>
+          <div class="stat-card">
+            <p style="color: #64748b; font-size: 13px; margin: 0;">KYC Compliance Rate</p>
+            <h2 id="adm-kyc" style="color: #0d9488; margin-top: 4px;">0%</h2>
+          </div>
+        </div>
+
+        <div style="margin-top: 28px;">
+          <h3>Fair Workload Distribution Audit</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Member Name</th>
+                <th>Trade & Locality</th>
+                <th>Duty Status</th>
+                <th>KYC Verification</th>
+                <th>Fixed Rate</th>
+                <th>Rating</th>
+                <th>Jobs</th>
+                <th>Net Payout (98%)</th>
+              </tr>
+            </thead>
+            <tbody id="adm-workers-tbody"></tbody>
+          </table>
+        </div>
+
+        <div style="margin-top: 28px;">
+          <h3>Immutable Order & Handshake Ledger</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Timestamp</th>
+                <th>Customer</th>
+                <th>Provider</th>
+                <th>Trade</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="adm-orders-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentUser = JSON.parse(localStorage.getItem('avadi_user') || 'null');
+    let isRegisterMode = false;
+    let allProviders = [];
+    let currentLang = 'en';
+    let syncTimer = null;
+    let activeLeafletMaps = {}; 
+    let activeMarkers = {}; 
+    let activePolylines = {}; 
+
+    // Real Avadi ward coordinates for accurate fallback simulation
+    const avadiCoordinates = {
+      "Avadi Checkpost": { lat: 13.1189, lng: 80.1018 },
+      "Gandhi Nagar": { lat: 13.1256, lng: 80.1085 },
+      "HVF Road": { lat: 13.1368, lng: 80.0982 },
+      "Pattabiram": { lat: 13.1245, lng: 80.0631 },
+      "Mitnamalli": { lat: 13.1552, lng: 80.1120 }
+    };
+
+    const translations = {
+      en: {
+        authTitle: "Login to Avadi Gig Portal",
+        custTitle: "Customer Portal",
+        provTitle: "Provider Workstation",
+        findHeading: "Find Registered Cooperative Providers",
+        fairDesc: "⚡ Only active, on-duty providers ranked via Fair Job Distribution.",
+        bookedHeading: "Your Booked Requests & Real-Time Tracking",
+        otpDesc: "When accepted, your worker's live location and dynamic route stream below. Share OTP only when completed.",
+        completed: "Completed Jobs",
+        payout: "Direct Payout (98%)",
+        welfare: "Welfare Fund (2%)",
+        trust: "Trust Rating",
+        incoming: "Incoming Customer Bookings & Destination Map",
+        bookBtn: "Book Service",
+        ratePrompt: "Rate service quality (1 to 5 stars):",
+        availOn: "🟢 Duty: Available",
+        availOff: "🔴 Duty: On Break"
+      },
+      ta: {
+        authTitle: "ஆவடி கூட்டுறவு சேவை தளம் - உள்நுழைக",
+        custTitle: "வாடிக்கையாளர் பக்கம் (Customer Portal)",
+        provTitle: "பணியாளர் பணிநிலையம் (Provider Workstation)",
+        findHeading: "பதிவுசெய்த கூட்டுறவு பணியாளர்கள்",
+        fairDesc: "⚡ பணியில் உள்ள (Active) தொழிலாளர்கள் மட்டுமே காண்பிக்கப்படுகின்றனர்.",
+        bookedHeading: "உங்கள் முன்பதிவுகள் & நேரடி இருப்பிட கண்காணிப்பு",
+        otpDesc: "பணியாளர் உங்கள் இருப்பிடத்தை நோக்கி வரும்போது வரைபடத்தில் பாதை தெரியும். பணி முடிந்ததும் OTP பகிரவும்.",
+        completed: "முடிந்த பணிகள்",
+        payout: "நேரடி வருமானம் (98%)",
+        welfare: "கூட்டுறவு நல நிதி (2%)",
+        trust: "நம்பகத்தன்மை மதிப்பீடு",
+        incoming: "வந்த முன்பதிவு கோரிக்கைகள் & வாடிக்கையாளர் வரைபடம்",
+        bookBtn: "முன்பதிவு செய்",
+        ratePrompt: "பணியாளருக்கு மதிப்பீடு வழங்கவும் (1 முதல் 5 வரை):",
+        availOn: "🟢 பணியில் உள்ளேன்",
+        availOff: "🔴 ஓய்வில் உள்ளேன்"
+      }
+    };
+
+    function showToast(msg) {
+      const t = document.getElementById('toast-banner');
+      t.innerText = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 2200);
+    }
+
+    function updateIdPlaceholder() {
+      const type = document.getElementById('auth-id-type').value;
+      const input = document.getElementById('auth-id-number');
+      input.placeholder = type === 'aadhaar' ? 'Enter 12-digit Aadhaar Number' : 'Enter 10-character PAN (e.g. ABCDE1234F)';
+    }
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'en' ? 'ta' : 'en';
+      const t = translations[currentLang];
+      document.getElementById('t-auth-title').innerText = t.authTitle;
+      document.getElementById('t-cust-title').innerText = t.custTitle;
+      document.getElementById('t-prov-title').innerText = t.provTitle;
+      document.getElementById('t-find-heading').innerText = t.findHeading;
+      document.getElementById('t-fair-desc').innerText = t.fairDesc;
+      document.getElementById('t-booked-heading').innerText = t.bookedHeading;
+      document.getElementById('t-otp-desc').innerText = t.otpDesc;
+      document.getElementById('t-stat-completed').innerText = t.completed;
+      document.getElementById('t-stat-payout').innerText = t.payout;
+      document.getElementById('t-stat-welfare').innerText = t.welfare;
+      document.getElementById('t-stat-trust').innerText = t.trust;
+      document.getElementById('t-prov-incoming').innerText = t.incoming;
+      filterProviders();
+    }
+
+    function toggleAuthMode() {
+      isRegisterMode = !isRegisterMode;
+      document.getElementById('t-auth-title').innerText = isRegisterMode ? 'Register Account' : translations[currentLang].authTitle;
+      document.getElementById('register-fields').style.display = isRegisterMode ? 'block' : 'none';
+      document.getElementById('auth-submit').innerText = isRegisterMode ? 'Register & Enter' : 'Login';
+      document.getElementById('auth-toggle').innerText = isRegisterMode ? 'Already have an account? Login' : "Don't have an account? Register";
+    }
+
+    function toggleRoleFields() {
+      document.getElementById('provider-details').style.display = document.getElementById('auth-role').value === 'provider' ? 'block' : 'none';
+    }
+
+    async function handleAuth() {
+      const email = document.getElementById('auth-email').value.trim();
+      if (!email) return alert('Enter email');
+
+      if (isRegisterMode) {
+        const name = document.getElementById('auth-name').value.trim();
+        const role = document.getElementById('auth-role').value;
+        const service = document.getElementById('auth-service').value.trim();
+        const area = document.getElementById('auth-area').value.trim();
+        const base_rate = document.getElementById('auth-base-rate').value.trim();
+        const id_type = document.getElementById('auth-id-type').value;
+        const id_number = document.getElementById('auth-id-number').value.trim();
+
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, role, service, area, base_rate, id_type, id_number })
+        });
+        const data = await res.json();
+        if (data.error) return alert(data.error);
+        currentUser = data;
+      } else {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (data.error) return alert(data.error);
+        currentUser = data;
+      }
+
+      localStorage.setItem('avadi_user', JSON.stringify(currentUser));
+      document.getElementById('auth-view').style.display = 'none';
+      loadDashboard();
+      startAutoSync();
+    }
+
+    function logout() {
+      clearInterval(syncTimer);
+      currentUser = null;
+      localStorage.removeItem('avadi_user');
+      document.getElementById('auth-view').style.display = 'block';
+      document.getElementById('customer-view').style.display = 'none';
+      document.getElementById('provider-view').style.display = 'none';
+      document.getElementById('admin-view').style.display = 'none';
+    }
+
+    function startAutoSync() {
+      clearInterval(syncTimer);
+      syncTimer = setInterval(async () => {
+        if (!currentUser) return;
+        if (currentUser.role === 'customer') {
+          await fetchCustomerOrders();
+          await fetchProviders();
+        } else if (currentUser.role === 'provider') {
+          await fetchProviderOrders();
+        }
+      }, 1500);
+    }
+
+    function loadDashboard() {
+      if (!currentUser) return;
+      document.getElementById('auth-view').style.display = 'none';
+
+      if (currentUser.role === 'customer') {
+        document.getElementById('customer-view').style.display = 'block';
+        document.getElementById('cust-name').innerText = currentUser.name;
+        fetchProviders();
+        fetchCustomerOrders();
+      } else {
+        document.getElementById('provider-view').style.display = 'block';
+        document.getElementById('prov-name').innerText = currentUser.name;
+        document.getElementById('prov-trade').innerText = currentUser.service || 'Cooperative Worker';
+        
+        const rateInput = document.getElementById('my-fixed-rate');
+        rateInput.value = currentUser.base_rate || 250;
+
+        const badgeCont = document.getElementById('prov-badge-container');
+        if (currentUser.is_verified) {
+          badgeCont.innerHTML = `<span class="badge badge-verified">🛡️ KYC Verified</span>`;
+        }
+        
+        const isAvail = currentUser.is_available === 1;
+        document.getElementById('avail-toggle').checked = isAvail;
+        updateAvailLabel(isAvail);
+        fetchProviderOrders();
+      }
+    }
+
+    async function updateMyRate() {
+      const rateInput = document.getElementById('my-fixed-rate');
+      const btn = document.getElementById('btn-update-rate');
+      const rate = parseInt(rateInput.value);
+
+      if (!rate || rate < 50) {
+        showToast('Please enter a valid rate (min ₹50)');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'Saving...';
+
+      try {
+        const res = await fetch('/api/provider/rate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider_id: currentUser.id, base_rate: rate })
+        });
+
+        const data = await res.json();
+        if (data.error) {
+          showToast(data.error);
+        } else {
+          currentUser.base_rate = data.base_rate;
+          localStorage.setItem('avadi_user', JSON.stringify(currentUser));
+          rateInput.value = data.base_rate;
+          showToast(`Rate updated to ₹${data.base_rate}`);
+        }
+      } catch (err) {
+        showToast('Failed to update rate');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Update Rate';
+      }
+    }
+
+    async function toggleAvailability(checked) {
+      currentUser.is_available = checked ? 1 : 0;
+      localStorage.setItem('avadi_user', JSON.stringify(currentUser));
+      updateAvailLabel(checked);
+
+      await fetch('/api/provider/availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider_id: currentUser.id, is_available: checked })
+      });
+
+      showToast(checked ? 'You are now Online' : 'You are now on Break');
+    }
+
+    function updateAvailLabel(isAvail) {
+      const lbl = document.getElementById('avail-label');
+      lbl.innerText = isAvail ? translations[currentLang].availOn : translations[currentLang].availOff;
+      lbl.style.color = isAvail ? '#16a34a' : '#dc2626';
+    }
+
+    async function fetchProviders() {
+      const res = await fetch('/api/providers');
+      allProviders = await res.json();
+      filterProviders();
+    }
+
+    function filterProviders() {
+      const q = document.getElementById('search-input')?.value.toLowerCase() || '';
+      const loc = document.getElementById('locality-select')?.value.toLowerCase() || '';
+
+      const filtered = allProviders.filter(p => {
+        const isOnline = p.is_available === 1;
+        const matchQ = (p.name && p.name.toLowerCase().includes(q)) || (p.service && p.service.toLowerCase().includes(q));
+        const matchLoc = !loc || (p.area && p.area.toLowerCase().includes(loc));
+        return isOnline && matchQ && matchLoc;
+      });
+      renderProviders(filtered);
+    }
+
+    function renderProviders(list) {
+      const container = document.getElementById('providers-list');
+      if (!container) return;
+      if (!list.length) {
+        container.innerHTML = '<p style="color: #64748b;">No available workers in this category right now.</p>';
+        return;
+      }
+      container.innerHTML = list.map(p => `
+        <div class="list-item">
+          <div class="list-item-row">
+            <div>
+              <strong>${p.name}</strong>
+              ${p.is_verified ? `<span class="badge badge-verified" style="margin-left: 6px;">🛡️ KYC Verified</span>` : ''}
+              <span style="color: #ca8a04; font-size: 13px; font-weight: bold; margin-left: 6px;">★ ${p.rating || 5.0}</span>
+              ${p.jobs_today <= 2 ? '<span class="badge badge-fair" style="margin-left: 6px;">Fair Opportunity Pick</span>' : ''}
+              <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
+                ${p.service} &bull; 📍 ${p.area || 'Avadi'} &bull; <span class="rate-pill">Rate: ₹${p.base_rate || 250}</span> &bull; Jobs Today: ${p.jobs_today}
+              </div>
+            </div>
+            <button class="btn-primary" onclick="bookProvider(${p.id}, '${p.name}', '${p.service}', '${p.area || 'Avadi Checkpost'}')">
+              ${translations[currentLang].bookBtn} (₹${p.base_rate || 250})
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function bookProvider(id, name, service, defaultArea) {
+      let custLat = avadiCoordinates[defaultArea]?.lat || 13.1189;
+      let custLng = avadiCoordinates[defaultArea]?.lng || 80.1018;
+
+      if (navigator.geolocation) {
+        try {
+          const pos = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4000 });
+          });
+          custLat = pos.coords.latitude;
+          custLng = pos.coords.longitude;
+        } catch (e) {
+          console.log("Using default coordinates for:", defaultArea);
+        }
+      }
+
+      const res = await fetch('/api/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_id: currentUser.id,
+          customer_name: currentUser.name,
+          provider_id: id,
+          provider_name: name,
+          service,
+          customer_lat: custLat,
+          customer_lng: custLng
+        })
+      });
+      const data = await res.json();
+      showToast(data.message);
+      fetchCustomerOrders();
+    }
+
+    async function fetchCustomerOrders() {
+      const res = await fetch('/api/orders/customer/' + currentUser.id);
+      const orders = await res.json();
+      const container = document.getElementById('customer-orders-list');
+      if (!container) return;
+      if (!orders.length) {
+        container.innerHTML = '<p style="color: #64748b;">No bookings placed yet.</p>';
+        return;
+      }
+
+      orders.forEach(o => {
+        let existingCard = document.getElementById(`cust-order-${o.id}`);
+        if (!existingCard) {
+          const div = document.createElement('div');
+          div.id = `cust-order-${o.id}`;
+          div.className = 'list-item';
+          div.innerHTML = `
+            <div class="list-item-row">
+              <div>
+                <strong>${o.service}</strong> with ${o.provider_name}
+                <div style="font-size: 13px; color: #64748b; margin-top: 4px;">Agreed Rate: ₹${o.amount}</div>
+              </div>
+              <div id="cust-actions-${o.id}" style="display: flex; align-items: center; gap: 10px;"></div>
+            </div>
+            <div id="map-cust-${o.id}" class="map-box" style="display: none;"></div>
+          `;
+          container.prepend(div);
+          existingCard = div;
+        }
+
+        const actionsBox = document.getElementById(`cust-actions-${o.id}`);
+        actionsBox.innerHTML = `
+          ${o.status === 'Accepted' ? `<span class="otp-box">OTP: ${o.otp}</span>` : ''}
+          <span class="badge badge-${o.status.toLowerCase()}">${o.status}</span>
+          ${o.status === 'Completed' && !o.rating ? `
+            <button class="btn-outline" style="color: #ca8a04; border-color: #ca8a04;" onclick="rateProvider(${o.id}, ${o.provider_id})">★ Rate</button>
+          ` : ''}
+          ${o.rating ? `<span style="font-size: 13px; color: #ca8a04; font-weight: bold;">Rated: ${o.rating} ★</span>` : ''}
+        `;
+
+        // Render & Update Live Tracking Map with dynamic polyline
+        const mapEl = document.getElementById(`map-cust-${o.id}`);
+        if (o.status === 'Accepted' && o.provider_lat && o.provider_lng) {
+          mapEl.style.display = 'block';
+          const custPos = [o.customer_lat, o.customer_lng];
+          const workerPos = [o.provider_lat, o.provider_lng];
+
+          if (!activeLeafletMaps[`cust-${o.id}`]) {
+            const map = L.map(`map-cust-${o.id}`).setView(custPos, 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+            L.marker(custPos).addTo(map).bindPopup("📍 Your Location (Avadi)").openPopup();
+            
+            const workerMarker = L.marker(workerPos).addTo(map).bindPopup("🚗 Worker En Route");
+            
+            const line = L.polyline([workerPos, custPos], {
+              color: '#2563eb',
+              weight: 4,
+              dashArray: '8, 8',
+              opacity: 0.85
+            }).addTo(map);
+
+            activeLeafletMaps[`cust-${o.id}`] = map;
+            activeMarkers[`worker-${o.id}`] = workerMarker;
+            activePolylines[`cust-line-${o.id}`] = line;
+          } else {
+            activeMarkers[`worker-${o.id}`].setLatLng(workerPos);
+            if (activePolylines[`cust-line-${o.id}`]) {
+              activePolylines[`cust-line-${o.id}`].setLatLngs([workerPos, custPos]);
+            }
+          }
+        } else if (o.status !== 'Accepted') {
+          mapEl.style.display = 'none';
+        }
+      });
+    }
+
+    async function rateProvider(orderId, providerId) {
+      const rating = prompt(translations[currentLang].ratePrompt);
+      const rNum = parseInt(rating);
+      if (isNaN(rNum) || rNum < 1 || rNum > 5) return showToast('Enter a rating between 1 and 5');
+
+      await fetch('/api/orders/rate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, provider_id: providerId, rating: rNum })
+      });
+      showToast('Rating submitted');
+      fetchCustomerOrders();
+    }
+
+    async function fetchProviderOrders() {
+      const res = await fetch('/api/orders/provider/' + currentUser.id);
+      const orders = await res.json();
+
+      const completed = orders.filter(o => o.status === 'Completed');
+      const totalEarned = completed.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+
+      document.getElementById('stat-jobs').innerText = completed.length;
+      document.getElementById('stat-earnings').innerText = '₹' + Math.round(totalEarned * 0.98);
+      document.getElementById('stat-welfare').innerText = '₹' + Math.round(totalEarned * 0.02);
+
+      const meRes = await fetch('/api/providers');
+      const allP = await meRes.json();
+      const me = allP.find(p => p.id === currentUser.id);
+      if (me) {
+        document.getElementById('stat-rating').innerText = (me.rating || 5.0) + ' ★';
+        currentUser.is_available = me.is_available;
+      }
+
+      const container = document.getElementById('provider-orders-list');
+      if (!container) return;
+      if (!orders.length) {
+        container.innerHTML = '<p style="color: #64748b;">No incoming bookings received yet.</p>';
+        return;
+      }
+
+      orders.forEach(o => {
+        let card = document.getElementById(`prov-order-${o.id}`);
+        if (!card) {
+          const div = document.createElement('div');
+          div.id = `prov-order-${o.id}`;
+          div.className = 'list-item';
+          div.innerHTML = `
+            <div class="list-item-row">
+              <div>
+                <strong>${o.customer_name}</strong> - ${o.service}
+                <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
+                  Payout: ₹${o.amount} &bull; Status: <span class="badge badge-${o.status.toLowerCase()}">${o.status}</span>
+                </div>
+              </div>
+              <div id="prov-actions-${o.id}"></div>
+            </div>
+            <div id="map-prov-${o.id}" class="map-box" style="display: none;"></div>
+          `;
+          container.prepend(div);
+          card = div;
+        }
+
+        const actionsBox = document.getElementById(`prov-actions-${o.id}`);
+        actionsBox.innerHTML = `
+          ${o.status === 'Pending' ? `
+            <button class="btn-green" onclick="setOrderStatus(${o.id}, 'Accepted')">Accept & View Route</button>
+            <button class="btn-danger" onclick="setOrderStatus(${o.id}, 'Rejected')">Reject</button>
+          ` : ''}
+          ${o.status === 'Accepted' ? `
+            <button class="btn-primary" onclick="verifyCompletion(${o.id})">Verify OTP & Complete</button>
+          ` : ''}
+        `;
+
+        // Render destination route map for worker
+        const mapEl = document.getElementById(`map-prov-${o.id}`);
+        if (o.status === 'Accepted' && o.customer_lat && o.customer_lng) {
+          mapEl.style.display = 'block';
+          if (!activeLeafletMaps[`prov-${o.id}`]) {
+            const destPos = [o.customer_lat, o.customer_lng];
+            const startPos = [o.customer_lat - 0.008, o.customer_lng - 0.006];
+
+            const map = L.map(`map-prov-${o.id}`).setView(destPos, 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+            L.marker(destPos).addTo(map).bindPopup(`📍 Destination: ${o.customer_name}'s Location (Avadi)`).openPopup();
+            
+            const provWorkerMarker = L.marker(startPos).addTo(map).bindPopup("🚗 Your Current Transit Location");
+            
+            const routeLine = L.polyline([startPos, destPos], {
+              color: '#16a34a',
+              weight: 4,
+              opacity: 0.8
+            }).addTo(map);
+
+            activeLeafletMaps[`prov-${o.id}`] = map;
+            activeMarkers[`prov-worker-${o.id}`] = provWorkerMarker;
+            activePolylines[`prov-line-${o.id}`] = routeLine;
+
+            streamWorkerLocation(o.id, o.customer_lat, o.customer_lng);
+          }
+        } else {
+          mapEl.style.display = 'none';
+        }
+      });
+    }
+
+    function streamWorkerLocation(orderId, destLat, destLng) {
+      let currentLat = destLat - 0.008;
+      let currentLng = destLng - 0.006;
+      const destPos = [destLat, destLng];
+
+      const trackInterval = setInterval(async () => {
+        currentLat += (destLat - currentLat) * 0.12;
+        currentLng += (destLng - currentLng) * 0.12;
+        const currentPos = [currentLat, currentLng];
+
+        if (activeMarkers[`prov-worker-${orderId}`]) {
+          activeMarkers[`prov-worker-${orderId}`].setLatLng(currentPos);
+        }
+        if (activePolylines[`prov-line-${orderId}`]) {
+          activePolylines[`prov-line-${orderId}`].setLatLngs([currentPos, destPos]);
+        }
+
+        await fetch('/api/orders/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_id: orderId,
+            provider_lat: currentLat,
+            provider_lng: currentLng
+          })
+        });
+
+        if (Math.abs(destLat - currentLat) < 0.0001 && Math.abs(destLng - currentLng) < 0.0001) {
+          clearInterval(trackInterval);
+        }
+      }, 2000);
+    }
+
+    async function setOrderStatus(id, status) {
+      await fetch('/api/orders/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: id, status })
+      });
+      fetchProviderOrders();
+    }
+
+    async function verifyCompletion(id) {
+      const otp = prompt('Enter customer 4-digit OTP:');
+      if (!otp) return;
+      const res = await fetch('/api/orders/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: id, otp })
+      });
+      const data = await res.json();
+      if (data.error) showToast(data.error);
+      else {
+        showToast(data.message);
+        fetchProviderOrders();
+      }
+    }
+
+    async function openAdminAudit() {
+      document.getElementById('auth-view').style.display = 'none';
+      document.getElementById('customer-view').style.display = 'none';
+      document.getElementById('provider-view').style.display = 'none';
+      document.getElementById('admin-view').style.display = 'block';
+
+      const res = await fetch('/api/admin/metrics');
+      const data = await res.json();
+
+      document.getElementById('adm-gmv').innerText = '₹' + data.grossVolume;
+      document.getElementById('adm-welfare').innerText = '₹' + data.totalWelfareFund;
+      document.getElementById('adm-payout').innerText = '₹' + data.totalWorkerPayout;
+      
+      const kycRate = data.totalWorkers ? Math.round((data.verifiedWorkers / data.totalWorkers) * 100) : 0;
+      document.getElementById('adm-kyc').innerText = `${kycRate}% (${data.verifiedWorkers}/${data.totalWorkers})`;
+
+      const wBody = document.getElementById('adm-workers-tbody');
+      wBody.innerHTML = data.workerWorkloads.map(w => `
+        <tr>
+          <td><strong>${w.name}</strong></td>
+          <td>${w.service || '-'} &bull; 📍 ${w.area || 'Avadi'}</td>
+          <td>${w.is_available === 1 ? '<span style="color:#16a34a; font-weight:bold;">🟢 Online</span>' : '<span style="color:#dc2626; font-weight:bold;">🔴 Off Duty</span>'}</td>
+          <td>${w.is_verified ? `<span class="badge badge-verified">🛡️ Verified</span>` : '<span class="badge badge-rejected">Pending</span>'}</td>
+          <td>₹${w.base_rate || 250}</td>
+          <td><span style="color: #ca8a04; font-weight: bold;">★ ${w.rating || 5.0}</span></td>
+          <td>${w.completed_jobs}</td>
+          <td style="color: #16a34a; font-weight: bold;">₹${Math.round(w.total_earned * 0.98)}</td>
+        </tr>
+      `).join('');
+
+      const oBody = document.getElementById('adm-orders-tbody');
+      oBody.innerHTML = data.auditLogs.map(o => `
+        <tr>
+          <td>#${o.id}</td>
+          <td style="color: #64748b;">${o.created_at || 'Recent'}</td>
+          <td>${o.customer_name}</td>
+          <td>${o.provider_name}</td>
+          <td>${o.service}</td>
+          <td>₹${o.amount}</td>
+          <td><span class="badge badge-${o.status.toLowerCase()}">${o.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function closeAdminAudit() {
+      document.getElementById('admin-view').style.display = 'none';
+      if (currentUser) loadDashboard();
+      else document.getElementById('auth-view').style.display = 'block';
+    }
+
+    if (currentUser) {
+      loadDashboard();
+      startAutoSync();
+    }
+  </script>
+</body>
+</html>
