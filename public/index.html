@@ -3,6 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <title>Avadi Cooperative Hyperlocal App</title>
+  
+  <!-- PWA Manifest & Mobile Configuration -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <!-- Leaflet OpenStreetMap CDN -->
@@ -889,6 +896,15 @@
     if (currentUser) {
       loadDashboard();
       startAutoSync();
+    }
+  </script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log('PWA Service Worker registered'))
+        .catch((err) => console.log('SW registration failed:', err));
     }
   </script>
 </body>
