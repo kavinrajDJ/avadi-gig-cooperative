@@ -34,11 +34,13 @@
     .badge-accepted { background: #dcfce7; color: #166534; }
     .badge-completed { background: #e0e7ff; color: #3730a3; }
     .badge-rejected { background: #fee2e2; color: #991b1b; }
+    .badge-expired { background: #f1f5f9; color: #64748b; border: 1px dashed #cbd5e1; }
     .badge-fair { background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc; }
     .badge-verified { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 11px; }
+    .badge-distance { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-weight: bold; font-size: 12px; padding: 3px 8px; border-radius: 4px; }
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
     .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; text-align: center; }
-    .filter-group { display: flex; gap: 10px; margin-bottom: 20px; }
+    .filter-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
     .list-item { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; }
     .list-item-row { display: flex; justify-content: space-between; align-items: center; }
     .otp-box { background: #eff6ff; border: 1px dashed #3b82f6; padding: 6px 12px; border-radius: 6px; font-family: monospace; font-size: 15px; font-weight: bold; color: #1d4ed8; }
@@ -68,16 +70,22 @@
     </div>
 
     <!-- Auth View -->
-    <div id="auth-view" class="card" style="max-width: 460px; margin: 30px auto;">
+    <div id="auth-view" class="card" style="max-width: 480px; margin: 30px auto;">
       <h2 id="t-auth-title" style="margin-top: 0;">Login to Avadi Gig Portal</h2>
       <input id="auth-email" class="input-field" type="email" placeholder="Email address" />
       
       <div id="register-fields" style="display: none;">
         <input id="auth-name" class="input-field" type="text" placeholder="Full Name" />
+        <input id="auth-phone" class="input-field" type="tel" placeholder="Mobile Phone Number (10 Digits)" />
+        
         <select id="auth-role" class="input-field" onchange="toggleRoleFields()">
           <option value="customer" id="t-opt-customer">Customer (Seeking Services)</option>
           <option value="provider" id="t-opt-provider">Provider (Worker / Cooperative Member)</option>
         </select>
+
+        <div id="customer-details">
+          <input id="auth-cust-address" class="input-field" type="text" placeholder="Complete Street Address / Door No (Avadi)" />
+        </div>
         
         <div id="provider-details" style="display: none;">
           <input id="auth-service" class="input-field" type="text" placeholder="Trade (e.g. Electrician, Plumber)" />
@@ -86,7 +94,7 @@
           <label style="font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">
             💰 Your Standard Service Rate (₹)
           </label>
-          <input id="auth-base-rate" class="input-field" type="number" value="250" placeholder="Set your fixed rate (e.g. 250, 300)" />
+          <input id="auth-base-rate" class="input-field" type="number" value="250" placeholder="Set your fixed rate" />
 
           <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
             <label style="font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">
@@ -99,6 +107,10 @@
             <input id="auth-id-number" class="input-field" style="margin-bottom: 4px;" type="text" placeholder="Enter 12-digit Aadhaar Number" />
             <small style="font-size: 11px; color: #64748b;">Masked & stored for statutory cooperative compliance.</small>
           </div>
+        </div>
+
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 12px; color: #1e40af;">
+          📍 <strong>GPS Requirement</strong>: Submitting registration requests your browser's location access to pair nearby bookings accurately.
         </div>
       </div>
 
@@ -114,7 +126,7 @@
         <div class="header">
           <div>
             <h2 id="t-cust-title">Customer Portal</h2>
-            <p style="margin: 4px 0 0 0; color: #64748b;">Welcome, <span id="cust-name"></span></p>
+            <p style="margin: 4px 0 0 0; color: #64748b;">Welcome, <span id="cust-name"></span> &bull; 📍 <span id="cust-address-display"></span></p>
           </div>
           <button class="btn-secondary" onclick="logout()">Logout</button>
         </div>
@@ -125,14 +137,22 @@
         </p>
 
         <div class="filter-group">
-          <input id="search-input" class="input-field" style="margin: 0; flex: 2;" type="text" placeholder="Search by service or worker name..." oninput="filterProviders()" />
-          <select id="locality-select" class="input-field" style="margin: 0; flex: 1;" onchange="filterProviders()">
+          <input id="search-input" class="input-field" style="margin: 0; flex: 2; min-width: 180px;" type="text" placeholder="Search by service or worker name..." oninput="filterProviders()" />
+          
+          <select id="locality-select" class="input-field" style="margin: 0; flex: 1; min-width: 150px;" onchange="filterProviders()">
             <option value="">All Avadi Areas</option>
             <option value="Gandhi Nagar">Gandhi Nagar</option>
             <option value="HVF Road">HVF Road</option>
             <option value="Avadi Checkpost">Avadi Checkpost</option>
             <option value="Pattabiram">Pattabiram</option>
             <option value="Mitnamalli">Mitnamalli</option>
+          </select>
+
+          <select id="sort-select" class="input-field" style="margin: 0; flex: 1.2; min-width: 180px; font-weight: 600;" onchange="filterProviders()">
+            <option value="fair">⚖️ Sort: Fair Workload</option>
+            <option value="rating">★ Sort: Highest Rating</option>
+            <option value="cost_asc">💰 Sort: Cost (Low to High)</option>
+            <option value="emergency">🚨 Emergency (Nearest First)</option>
           </select>
         </div>
 
@@ -142,7 +162,7 @@
       <div class="card">
         <h3 id="t-booked-heading">Your Booked Requests & Real-Time Tracking</h3>
         <p style="font-size: 13px; color: #64748b; margin: 4px 0 16px 0;" id="t-otp-desc">
-          When accepted, your worker's live location and dynamic route stream below. Share OTP only when completed.
+          Workers have 90 seconds to respond. Once accepted, live route tracking activates. Share OTP only upon service completion.
         </p>
         <div id="customer-orders-list"></div>
       </div>
@@ -285,8 +305,8 @@
     let activeLeafletMaps = {}; 
     let activeMarkers = {}; 
     let activePolylines = {}; 
+    let warnedExpiredOrders = new Set();
 
-    // Real Avadi ward coordinates for accurate fallback simulation
     const avadiCoordinates = {
       "Avadi Checkpost": { lat: 13.1189, lng: 80.1018 },
       "Gandhi Nagar": { lat: 13.1256, lng: 80.1085 },
@@ -294,6 +314,36 @@
       "Pattabiram": { lat: 13.1245, lng: 80.0631 },
       "Mitnamalli": { lat: 13.1552, lng: 80.1120 }
     };
+
+    // Haversine distance formula returning meters / kilometers
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+      const R = 6371; // km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const d = R * c;
+      if (d < 1) {
+        return Math.round(d * 1000) + ' m';
+      }
+      return d.toFixed(1) + ' km';
+    }
+
+    function calculateDistanceNumeric(lat1, lon1, lat2, lon2) {
+      if (!lat1 || !lon1 || !lat2 || !lon2) return 9999;
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    }
 
     const translations = {
       en: {
@@ -303,7 +353,7 @@
         findHeading: "Find Registered Cooperative Providers",
         fairDesc: "⚡ Only active, on-duty providers ranked via Fair Job Distribution.",
         bookedHeading: "Your Booked Requests & Real-Time Tracking",
-        otpDesc: "When accepted, your worker's live location and dynamic route stream below. Share OTP only when completed.",
+        otpDesc: "Workers have 90 seconds to respond. Once accepted, live route tracking activates. Share OTP only upon service completion.",
         completed: "Completed Jobs",
         payout: "Direct Payout (98%)",
         welfare: "Welfare Fund (2%)",
@@ -321,7 +371,7 @@
         findHeading: "பதிவுசெய்த கூட்டுறவு பணியாளர்கள்",
         fairDesc: "⚡ பணியில் உள்ள (Active) தொழிலாளர்கள் மட்டுமே காண்பிக்கப்படுகின்றனர்.",
         bookedHeading: "உங்கள் முன்பதிவுகள் & நேரடி இருப்பிட கண்காணிப்பு",
-        otpDesc: "பணியாளர் உங்கள் இருப்பிடத்தை நோக்கி வரும்போது வரைபடத்தில் பாதை தெரியும். பணி முடிந்ததும் OTP பகிரவும்.",
+        otpDesc: "பணியாளர் ஏற்க 90 வினாடிகள் அவகாசம் உள்ளது. ஏற்றதும் வழித்தடம் தெரியும். பணி முடிந்ததும் OTP பகிரவும்.",
         completed: "முடிந்த பணிகள்",
         payout: "நேரடி வருமானம் (98%)",
         welfare: "கூட்டுறவு நல நிதி (2%)",
@@ -338,13 +388,13 @@
       const t = document.getElementById('toast-banner');
       t.innerText = msg;
       t.style.display = 'block';
-      setTimeout(() => { t.style.display = 'none'; }, 2200);
+      setTimeout(() => { t.style.display = 'none'; }, 3200);
     }
 
     function updateIdPlaceholder() {
       const type = document.getElementById('auth-id-type').value;
       const input = document.getElementById('auth-id-number');
-      input.placeholder = type === 'aadhaar' ? 'Enter 12-digit Aadhaar Number' : 'Enter 10-character PAN (e.g. ABCDE1234F)';
+      input.placeholder = type === 'aadhaar' ? 'Enter 12-digit Aadhaar Number' : 'Enter 10-character PAN';
     }
 
     function toggleLanguage() {
@@ -374,26 +424,48 @@
     }
 
     function toggleRoleFields() {
-      document.getElementById('provider-details').style.display = document.getElementById('auth-role').value === 'provider' ? 'block' : 'none';
+      const isProvider = document.getElementById('auth-role').value === 'provider';
+      document.getElementById('provider-details').style.display = isProvider ? 'block' : 'none';
+      document.getElementById('customer-details').style.display = isProvider ? 'none' : 'block';
     }
 
     async function handleAuth() {
       const email = document.getElementById('auth-email').value.trim();
-      if (!email) return alert('Enter email');
+      if (!email) return alert('Please enter email');
 
       if (isRegisterMode) {
         const name = document.getElementById('auth-name').value.trim();
+        const phone = document.getElementById('auth-phone').value.trim();
         const role = document.getElementById('auth-role').value;
+        const address = document.getElementById('auth-cust-address').value.trim();
         const service = document.getElementById('auth-service').value.trim();
         const area = document.getElementById('auth-area').value.trim();
         const base_rate = document.getElementById('auth-base-rate').value.trim();
         const id_type = document.getElementById('auth-id-type').value;
         const id_number = document.getElementById('auth-id-number').value.trim();
 
+        if (!phone) return alert('Phone number is required for registration.');
+        if (role === 'customer' && !address) return alert('Complete address is required for customer registration.');
+
+        // Fetch user location
+        let lat = avadiCoordinates["Gandhi Nagar"].lat;
+        let lng = avadiCoordinates["Gandhi Nagar"].lng;
+        if (navigator.geolocation) {
+          try {
+            const pos = await new Promise((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+            });
+            lat = pos.coords.latitude;
+            lng = pos.coords.longitude;
+          } catch (e) {
+            console.log('Location permission denied or timed out; standard Avadi centroid assigned.');
+          }
+        }
+
         const res = await fetch('/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, role, service, area, base_rate, id_type, id_number })
+          body: JSON.stringify({ name, email, phone, address, role, service, area, base_rate, id_type, id_number, lat, lng })
         });
         const data = await res.json();
         if (data.error) return alert(data.error);
@@ -435,7 +507,7 @@
         } else if (currentUser.role === 'provider') {
           await fetchProviderOrders();
         }
-      }, 1500);
+      }, 2000);
     }
 
     function loadDashboard() {
@@ -445,6 +517,7 @@
       if (currentUser.role === 'customer') {
         document.getElementById('customer-view').style.display = 'block';
         document.getElementById('cust-name').innerText = currentUser.name;
+        document.getElementById('cust-address-display').innerText = currentUser.address || 'Avadi';
         fetchProviders();
         fetchCustomerOrders();
       } else {
@@ -472,10 +545,7 @@
       const btn = document.getElementById('btn-update-rate');
       const rate = parseInt(rateInput.value);
 
-      if (!rate || rate < 50) {
-        showToast('Please enter a valid rate (min ₹50)');
-        return;
-      }
+      if (!rate || rate < 50) return showToast('Please enter a valid rate (min ₹50)');
 
       btn.disabled = true;
       btn.innerText = 'Saving...';
@@ -486,16 +556,10 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ provider_id: currentUser.id, base_rate: rate })
         });
-
         const data = await res.json();
-        if (data.error) {
-          showToast(data.error);
-        } else {
-          currentUser.base_rate = data.base_rate;
-          localStorage.setItem('avadi_user', JSON.stringify(currentUser));
-          rateInput.value = data.base_rate;
-          showToast(`Rate updated to ₹${data.base_rate}`);
-        }
+        currentUser.base_rate = data.base_rate;
+        localStorage.setItem('avadi_user', JSON.stringify(currentUser));
+        showToast(`Rate updated to ₹${data.base_rate}`);
       } catch (err) {
         showToast('Failed to update rate');
       } finally {
@@ -533,13 +597,34 @@
     function filterProviders() {
       const q = document.getElementById('search-input')?.value.toLowerCase() || '';
       const loc = document.getElementById('locality-select')?.value.toLowerCase() || '';
+      const sortBy = document.getElementById('sort-select')?.value || 'fair';
 
-      const filtered = allProviders.filter(p => {
+      let filtered = allProviders.filter(p => {
         const isOnline = p.is_available === 1;
         const matchQ = (p.name && p.name.toLowerCase().includes(q)) || (p.service && p.service.toLowerCase().includes(q));
         const matchLoc = !loc || (p.area && p.area.toLowerCase().includes(loc));
         return isOnline && matchQ && matchLoc;
       });
+
+      // Customer Filter & Sort
+      const custLat = currentUser?.lat || 13.1189;
+      const custLng = currentUser?.lng || 80.1018;
+
+      if (sortBy === 'rating') {
+        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      } else if (sortBy === 'cost_asc') {
+        filtered.sort((a, b) => (a.base_rate || 0) - (b.base_rate || 0));
+      } else if (sortBy === 'emergency') {
+        filtered.sort((a, b) => {
+          const dA = calculateDistanceNumeric(custLat, custLng, a.lat, a.lng);
+          const dB = calculateDistanceNumeric(custLat, custLng, b.lat, b.lng);
+          return dA - dB;
+        });
+      } else {
+        // Fair Opportunity Distribution (fewer jobs today prioritized)
+        filtered.sort((a, b) => (a.jobs_today || 0) - (b.jobs_today || 0));
+      }
+
       renderProviders(filtered);
     }
 
@@ -547,42 +632,50 @@
       const container = document.getElementById('providers-list');
       if (!container) return;
       if (!list.length) {
-        container.innerHTML = '<p style="color: #64748b;">No available workers in this category right now.</p>';
+        container.innerHTML = '<p style="color: #64748b;">No available workers match your filter criteria right now.</p>';
         return;
       }
-      container.innerHTML = list.map(p => `
-        <div class="list-item">
-          <div class="list-item-row">
-            <div>
-              <strong>${p.name}</strong>
-              ${p.is_verified ? `<span class="badge badge-verified" style="margin-left: 6px;">🛡️ KYC Verified</span>` : ''}
-              <span style="color: #ca8a04; font-size: 13px; font-weight: bold; margin-left: 6px;">★ ${p.rating || 5.0}</span>
-              ${p.jobs_today <= 2 ? '<span class="badge badge-fair" style="margin-left: 6px;">Fair Opportunity Pick</span>' : ''}
-              <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
-                ${p.service} &bull; 📍 ${p.area || 'Avadi'} &bull; <span class="rate-pill">Rate: ₹${p.base_rate || 250}</span> &bull; Jobs Today: ${p.jobs_today}
+
+      const custLat = currentUser?.lat || 13.1189;
+      const custLng = currentUser?.lng || 80.1018;
+
+      container.innerHTML = list.map(p => {
+        const distStr = calculateDistance(custLat, custLng, p.lat, p.lng);
+        return `
+          <div class="list-item">
+            <div class="list-item-row">
+              <div>
+                <strong>${p.name}</strong>
+                ${p.is_verified ? `<span class="badge badge-verified" style="margin-left: 6px;">🛡️ KYC Verified</span>` : ''}
+                <span style="color: #ca8a04; font-size: 13px; font-weight: bold; margin-left: 6px;">★ ${p.rating || 5.0}</span>
+                ${distStr ? `<span class="badge badge-distance" style="margin-left: 6px;">📍 ${distStr} away</span>` : ''}
+                ${p.jobs_today <= 2 ? '<span class="badge badge-fair" style="margin-left: 6px;">Fair Pick</span>' : ''}
+                <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
+                  ${p.service} &bull; 📍 ${p.area || 'Avadi'} &bull; <span class="rate-pill">Rate: ₹${p.base_rate || 250}</span> &bull; Jobs Today: ${p.jobs_today}
+                </div>
               </div>
+              <button class="btn-primary" onclick="bookProvider(${p.id}, '${p.name}', '${p.service}', '${p.area || 'Avadi Checkpost'}')">
+                ${translations[currentLang].bookBtn} (₹${p.base_rate || 250})
+              </button>
             </div>
-            <button class="btn-primary" onclick="bookProvider(${p.id}, '${p.name}', '${p.service}', '${p.area || 'Avadi Checkpost'}')">
-              ${translations[currentLang].bookBtn} (₹${p.base_rate || 250})
-            </button>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     async function bookProvider(id, name, service, defaultArea) {
-      let custLat = avadiCoordinates[defaultArea]?.lat || 13.1189;
-      let custLng = avadiCoordinates[defaultArea]?.lng || 80.1018;
+      let custLat = currentUser?.lat || avadiCoordinates[defaultArea]?.lat || 13.1189;
+      let custLng = currentUser?.lng || avadiCoordinates[defaultArea]?.lng || 80.1018;
 
       if (navigator.geolocation) {
         try {
           const pos = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4000 });
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3500 });
           });
           custLat = pos.coords.latitude;
           custLng = pos.coords.longitude;
         } catch (e) {
-          console.log("Using default coordinates for:", defaultArea);
+          console.log("Using cached coordinates");
         }
       }
 
@@ -592,6 +685,8 @@
         body: JSON.stringify({
           customer_id: currentUser.id,
           customer_name: currentUser.name,
+          customer_phone: currentUser.phone,
+          customer_address: currentUser.address,
           provider_id: id,
           provider_name: name,
           service,
@@ -615,6 +710,12 @@
       }
 
       orders.forEach(o => {
+        // Feature 3: Alert customer if worker did not accept within 90 seconds
+        if (o.status === 'Expired' && !warnedExpiredOrders.has(o.id)) {
+          warnedExpiredOrders.add(o.id);
+          showToast(`⚠️ Booking #${o.id} expired: Worker did not respond in 90 seconds.`);
+        }
+
         let existingCard = document.getElementById(`cust-order-${o.id}`);
         if (!existingCard) {
           const div = document.createElement('div');
@@ -637,14 +738,13 @@
         const actionsBox = document.getElementById(`cust-actions-${o.id}`);
         actionsBox.innerHTML = `
           ${o.status === 'Accepted' ? `<span class="otp-box">OTP: ${o.otp}</span>` : ''}
-          <span class="badge badge-${o.status.toLowerCase()}">${o.status}</span>
+          <span class="badge badge-${o.status.toLowerCase()}">${o.status === 'Expired' ? '⏱️ Expired (No Response)' : o.status}</span>
           ${o.status === 'Completed' && !o.rating ? `
             <button class="btn-outline" style="color: #ca8a04; border-color: #ca8a04;" onclick="rateProvider(${o.id}, ${o.provider_id})">★ Rate</button>
           ` : ''}
           ${o.rating ? `<span style="font-size: 13px; color: #ca8a04; font-weight: bold;">Rated: ${o.rating} ★</span>` : ''}
         `;
 
-        // Render & Update Live Tracking Map with dynamic polyline
         const mapEl = document.getElementById(`map-cust-${o.id}`);
         if (o.status === 'Accepted' && o.provider_lat && o.provider_lng) {
           mapEl.style.display = 'block';
@@ -654,10 +754,9 @@
           if (!activeLeafletMaps[`cust-${o.id}`]) {
             const map = L.map(`map-cust-${o.id}`).setView(custPos, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-            L.marker(custPos).addTo(map).bindPopup("📍 Your Location (Avadi)").openPopup();
+            L.marker(custPos).addTo(map).bindPopup("📍 Your Location").openPopup();
             
             const workerMarker = L.marker(workerPos).addTo(map).bindPopup("🚗 Worker En Route");
-            
             const line = L.polyline([workerPos, custPos], {
               color: '#2563eb',
               weight: 4,
@@ -722,56 +821,58 @@
 
       orders.forEach(o => {
         let card = document.getElementById(`prov-order-${o.id}`);
+        const distStr = calculateDistance(currentUser.lat || 13.1256, currentUser.lng || 80.1085, o.customer_lat, o.customer_lng) || 'Nearby';
+
         if (!card) {
           const div = document.createElement('div');
           div.id = `prov-order-${o.id}`;
           div.className = 'list-item';
-          div.innerHTML = `
-            <div class="list-item-row">
-              <div>
-                <strong>${o.customer_name}</strong> - ${o.service}
-                <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
-                  Payout: ₹${o.amount} &bull; Status: <span class="badge badge-${o.status.toLowerCase()}">${o.status}</span>
-                </div>
-              </div>
-              <div id="prov-actions-${o.id}"></div>
-            </div>
-            <div id="map-prov-${o.id}" class="map-box" style="display: none;"></div>
-          `;
           container.prepend(div);
           card = div;
         }
 
-        const actionsBox = document.getElementById(`prov-actions-${o.id}`);
-        actionsBox.innerHTML = `
-          ${o.status === 'Pending' ? `
-            <button class="btn-green" onclick="setOrderStatus(${o.id}, 'Accepted')">Accept & View Route</button>
-            <button class="btn-danger" onclick="setOrderStatus(${o.id}, 'Rejected')">Reject</button>
-          ` : ''}
-          ${o.status === 'Accepted' ? `
-            <button class="btn-primary" onclick="verifyCompletion(${o.id})">Verify OTP & Complete</button>
-          ` : ''}
+        // Features 2 & 4: Pre-acceptance distance & address + phone reveal on accept
+        card.innerHTML = `
+          <div class="list-item-row">
+            <div>
+              <strong>${o.customer_name}</strong> &bull; ${o.service}
+              <div style="font-size: 13px; color: #475569; margin-top: 3px;">
+                📍 <strong>Address:</strong> ${o.customer_address || 'Avadi Area'} 
+                <span class="badge badge-distance" style="margin-left: 4px;">📏 ${distStr} away</span>
+              </div>
+              ${o.status === 'Accepted' ? `
+                <div style="font-size: 13px; color: #16a34a; font-weight: bold; margin-top: 4px;">
+                  📞 Customer Phone: <a href="tel:${o.customer_phone}">${o.customer_phone || 'Available on request'}</a>
+                </div>
+              ` : ''}
+              <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                Payout: ₹${o.amount} &bull; Status: <span class="badge badge-${o.status.toLowerCase()}">${o.status}</span>
+              </div>
+            </div>
+            <div id="prov-actions-${o.id}">
+              ${o.status === 'Pending' ? `
+                <button class="btn-green" onclick="setOrderStatus(${o.id}, 'Accepted')">Accept & View Route</button>
+                <button class="btn-danger" onclick="setOrderStatus(${o.id}, 'Rejected')">Reject</button>
+              ` : ''}
+              ${o.status === 'Accepted' ? `
+                <button class="btn-primary" onclick="verifyCompletion(${o.id})">Verify OTP & Complete</button>
+              ` : ''}
+            </div>
+          </div>
+          <div id="map-prov-${o.id}" class="map-box" style="display: ${o.status === 'Accepted' ? 'block' : 'none'};"></div>
         `;
 
-        // Render destination route map for worker
-        const mapEl = document.getElementById(`map-prov-${o.id}`);
         if (o.status === 'Accepted' && o.customer_lat && o.customer_lng) {
-          mapEl.style.display = 'block';
           if (!activeLeafletMaps[`prov-${o.id}`]) {
             const destPos = [o.customer_lat, o.customer_lng];
-            const startPos = [o.customer_lat - 0.008, o.customer_lng - 0.006];
+            const startPos = [o.customer_lat - 0.007, o.customer_lng - 0.005];
 
             const map = L.map(`map-prov-${o.id}`).setView(destPos, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-            L.marker(destPos).addTo(map).bindPopup(`📍 Destination: ${o.customer_name}'s Location (Avadi)`).openPopup();
+            L.marker(destPos).addTo(map).bindPopup(`📍 Destination: ${o.customer_name}'s Address`).openPopup();
             
             const provWorkerMarker = L.marker(startPos).addTo(map).bindPopup("🚗 Your Current Transit Location");
-            
-            const routeLine = L.polyline([startPos, destPos], {
-              color: '#16a34a',
-              weight: 4,
-              opacity: 0.8
-            }).addTo(map);
+            const routeLine = L.polyline([startPos, destPos], { color: '#16a34a', weight: 4, opacity: 0.8 }).addTo(map);
 
             activeLeafletMaps[`prov-${o.id}`] = map;
             activeMarkers[`prov-worker-${o.id}`] = provWorkerMarker;
@@ -779,15 +880,13 @@
 
             streamWorkerLocation(o.id, o.customer_lat, o.customer_lng);
           }
-        } else {
-          mapEl.style.display = 'none';
         }
       });
     }
 
     function streamWorkerLocation(orderId, destLat, destLng) {
-      let currentLat = destLat - 0.008;
-      let currentLng = destLng - 0.006;
+      let currentLat = destLat - 0.007;
+      let currentLng = destLng - 0.005;
       const destPos = [destLat, destLng];
 
       const trackInterval = setInterval(async () => {
@@ -805,11 +904,7 @@
         await fetch('/api/orders/track', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            order_id: orderId,
-            provider_lat: currentLat,
-            provider_lng: currentLng
-          })
+          body: JSON.stringify({ order_id: orderId, provider_lat: currentLat, provider_lng: currentLng })
         });
 
         if (Math.abs(destLat - currentLat) < 0.0001 && Math.abs(destLng - currentLng) < 0.0001) {
