@@ -61,7 +61,7 @@
         <form onsubmit="handleLogin(event)">
           <div class="form-group">
             <label>Registered Email</label>
-            <input type="email" id="login-email" placeholder="e.g. ramesh.k@gmail.com" required />
+            <input type="email" id="login-email" placeholder="e.g. murugan.carpenter@gmail.com" required />
           </div>
           <button type="submit" class="btn" style="width: 100%;">Sign In</button>
         </form>
@@ -128,7 +128,7 @@
 
         <h3 style="margin-bottom: 12px;">Find Registered Cooperative Providers</h3>
         <div class="grid" style="grid-template-columns: 2fr 1.5fr 1.5fr; margin-bottom: 16px;">
-          <input type="text" id="search-service" placeholder="Search service (e.g. Electrician)" oninput="filterProviders()" />
+          <input type="text" id="search-service" placeholder="Search service (e.g. Carpenter)" oninput="filterProviders()" />
           <select id="filter-area" onchange="filterProviders()">
             <option value="">All Avadi Areas</option>
             <option value="Gandhi Nagar">Gandhi Nagar</option>
@@ -160,6 +160,10 @@
           <div>
             <h2>Provider Workstation</h2>
             <p id="prov-welcome" style="color: var(--text-muted); font-size: 14px;"></p>
+            <div style="margin-top: 6px; font-size: 13px; color: #15803d; font-weight: 600;">
+              Standard Service Fee: <span id="prov-current-rate">₹250</span>
+              <button class="btn btn-secondary" style="font-size: 11px; padding: 3px 8px; margin-left: 8px;" onclick="updateProviderRate()">✏️ Edit Fee</button>
+            </div>
           </div>
           <div>
             <button id="duty-btn" class="btn btn-success" onclick="toggleDuty()">🟢 Duty: Available</button>
@@ -397,6 +401,8 @@
         document.getElementById('customer-view').style.display = 'none';
         document.getElementById('provider-view').style.display = 'block';
         document.getElementById('prov-welcome').textContent = `${currentUser.name} (${currentUser.service}) • 📍 ${currentUser.area || 'Avadi'}`;
+        const rateLabel = document.getElementById('prov-current-rate');
+        if (rateLabel) rateLabel.textContent = `₹${currentUser.base_rate || 250}`;
         updateDutyButton(currentUser.is_available);
         await fetchProviderOrders();
       }
@@ -447,7 +453,7 @@
             <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
               ${p.service} • ${p.area} • <b>📍 ${p.calcDistance} km away</b>
             </div>
-            <div style="font-size: 13px; color: #15803d; font-weight: 600; margin-top: 4px;">Fixed Municipal Rate: ₹${p.base_rate || 250}</div>
+            <div style="font-size: 13px; color: #15803d; font-weight: 600; margin-top: 4px;">Standard Municipal Rate: ₹${p.base_rate || 250}</div>
           </div>
           <button class="btn" onclick="bookProvider(${p.id}, '${p.name}', '${p.service}', ${p.base_rate || 250})">Book Service</button>
         </div>
@@ -539,7 +545,7 @@
         });
         const data = await res.json();
         if (data.success) {
-          alert("Thank you! Your rating has updated the worker's rating.");
+          alert("Thank you! Your rating has updated the worker's cooperative rating.");
           fetchCustomerOrders();
           fetchProviders();
         } else {
@@ -655,6 +661,38 @@
       } else {
         btn.textContent = '🔴 Duty: Off';
         btn.className = 'btn btn-secondary';
+      }
+    }
+
+    async function updateProviderRate() {
+      const currentRate = currentUser.base_rate || 250;
+      const newRate = prompt(`Enter your new standard service rate (₹):`, currentRate);
+      if (!newRate) return;
+
+      const rateVal = parseInt(newRate.trim(), 10);
+      if (isNaN(rateVal) || rateVal < 50) {
+        alert("Please enter a valid amount (minimum ₹50).");
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/providers/rate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: currentUser.id, base_rate: rateVal })
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentUser.base_rate = rateVal;
+          localStorage.setItem('currentUser', JSON.stringify(currentUser));
+          const rateLabel = document.getElementById('prov-current-rate');
+          if (rateLabel) rateLabel.textContent = `₹${rateVal}`;
+          alert(`✅ Standard rate updated to ₹${rateVal}! Customers will see your updated rate immediately.`);
+        } else {
+          alert(data.message || "Failed to update rate.");
+        }
+      } catch (err) {
+        alert("Error updating fee: " + err.message);
       }
     }
 

@@ -135,10 +135,28 @@ app.get('/api/providers', (req, res) => {
   }
 });
 
+// Provider toggle online/offline duty
 app.post('/api/providers/duty', (req, res) => {
   const { id, is_available } = req.body;
   db.prepare('UPDATE users SET is_available = ? WHERE id = ?').run(is_available ? 1 : 0, id);
   res.json({ success: true });
+});
+
+// Provider update base fees
+app.post('/api/providers/rate', (req, res) => {
+  const { id, base_rate } = req.body;
+  const rate = parseInt(base_rate, 10);
+
+  if (isNaN(rate) || rate < 50) {
+    return res.status(400).json({ success: false, message: 'Please enter a valid rate (minimum ₹50)' });
+  }
+
+  try {
+    db.prepare('UPDATE users SET base_rate = ? WHERE id = ?').run(rate, id);
+    res.json({ success: true, base_rate: rate });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // --- ORDER ROUTES ---
@@ -153,24 +171,6 @@ app.post('/api/orders/create', (req, res) => {
   `).run(customer_id, customer_name, customer_phone, customer_address, client_lat, client_lng, provider_id, provider_name, service, amount || 250, otp);
 
   res.json({ success: true, orderId: info.lastInsertRowid });
-});
-
-app.get('/api/orders/provider/:id', (req, res) => {
-  try {
-    const orders = db.prepare(`SELECT * FROM orders WHERE provider_id = ? ORDER BY id DESC`).all(req.params.id);
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/orders/customer/:id', (req, res) => {
-  try {
-    const orders = db.prepare(`SELECT * FROM orders WHERE customer_id = ? ORDER BY id DESC`).all(req.params.id);
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
 });
 
 app.get('/api/orders/user/:id', (req, res) => {
@@ -196,7 +196,7 @@ app.post('/api/orders/status', (req, res) => {
   res.json({ success: true });
 });
 
-// Rate provider & update running average rating
+// Customer rating submission route
 app.post('/api/orders/rate', (req, res) => {
   const { order_id, rating } = req.body;
   const numRating = parseFloat(rating);
@@ -208,7 +208,7 @@ app.post('/api/orders/rate', (req, res) => {
   try {
     const order = db.prepare('SELECT provider_id FROM orders WHERE id = ?').get(order_id);
     if (!order || !order.provider_id) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
+      return res.status(404).json({ success: false, message: 'Order or provider not found' });
     }
 
     db.prepare(`
@@ -224,7 +224,7 @@ app.post('/api/orders/rate', (req, res) => {
   }
 });
 
-// --- ADMIN AUDIT ROUTE ---
+// --- FEDERATION AUDIT METRICS ROUTE ---
 
 app.get('/api/admin/metrics', (req, res) => {
   try {
