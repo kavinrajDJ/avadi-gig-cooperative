@@ -1,157 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Avadi Cooperative Hyperlocal App</title>
-  
-  <!-- PWA Manifest & Mobile Configuration -->
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#2563eb">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- Leaflet OpenStreetMap CDN -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Avadi Hyperlocal Gig Cooperative</title>
   <style>
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
-    .container { max-width: 1050px; margin: 0 auto; }
-    .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); margin-bottom: 20px; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px; }
-    button { cursor: pointer; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 600; font-size: 14px; transition: 0.2s; }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-green { background: #16a34a; color: #fff; }
-    .btn-danger { background: #dc2626; color: #fff; }
-    .btn-secondary { background: #64748b; color: #fff; }
-    .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: #334155; }
-    .input-field { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
-    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
-    .badge-pending { background: #fef3c7; color: #92400e; }
-    .badge-accepted { background: #dcfce7; color: #166534; }
-    .badge-completed { background: #e0e7ff; color: #3730a3; }
-    .badge-rejected { background: #fee2e2; color: #991b1b; }
-    .badge-expired { background: #f1f5f9; color: #64748b; border: 1px dashed #cbd5e1; }
-    .badge-fair { background: #fdf4ff; color: #86198f; border: 1px solid #f0abfc; }
-    .badge-verified { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 11px; }
-    .badge-distance { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-weight: bold; font-size: 12px; padding: 3px 8px; border-radius: 4px; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
-    .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; text-align: center; }
-    .filter-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-    .list-item { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; }
-    .list-item-row { display: flex; justify-content: space-between; align-items: center; }
-    .otp-box { background: #eff6ff; border: 1px dashed #3b82f6; padding: 6px 12px; border-radius: 6px; font-family: monospace; font-size: 15px; font-weight: bold; color: #1d4ed8; }
-    .toggle-switch { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
-    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
-    th { background: #f8fafc; color: #475569; font-weight: 600; }
-    .rate-pill { background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 13px; font-weight: bold; color: #0f172a; border: 1px solid #cbd5e1; }
-    .live-pulse { display: inline-block; width: 8px; height: 8px; background: #16a34a; border-radius: 50%; margin-right: 4px; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
-    #toast-banner { display: none; position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; }
-    .map-box { height: 220px; width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #cbd5e1; z-index: 10; }
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 20px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .btn { background-color: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 14px; }
+    .btn:hover { background-color: var(--primary-hover); }
+    .btn-secondary { background-color: #64748b; }
+    .btn-secondary:hover { background-color: #475569; }
+    .btn-danger { background-color: var(--danger); }
+    .btn-danger:hover { background-color: #b91c1c; }
+    .btn-success { background-color: var(--success); }
+    .card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
+    .form-group input, .form-group select { width: 100%; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border); font-size: 14px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .badge-success { background: #dcfce7; color: #15803d; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+    .badge-warning { background: #fef3c7; color: #b45309; }
+    .worker-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .order-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { background: #f1f5f9; color: var(--text-muted); font-weight: 600; }
   </style>
 </head>
 <body>
-  <div id="toast-banner"></div>
   <div class="container">
-
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-      <button class="btn-outline" onclick="openAdminAudit()" style="font-weight: bold; background: #fff;">
-        📊 Avadi Federation Audit Dashboard
-      </button>
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 12px; color: #64748b;"><span class="live-pulse"></span>Live Real-Time Sync</span>
-        <button class="btn-outline" onclick="toggleLanguage()" id="lang-btn">🌐 தமிழ் / English</button>
+    <header>
+      <button class="btn btn-secondary" onclick="openAdminAudit()">📊 Avadi Federation Audit Dashboard</button>
+      <div>
+        <span id="sync-status" style="font-size: 12px; color: var(--success); margin-right: 12px;">● Live Real-Time Sync</span>
+        <button class="btn btn-secondary" onclick="toggleLanguage()">🌐 தமிழ் / English</button>
       </div>
-    </div>
+    </header>
 
     <!-- Auth View -->
-    <div id="auth-view" class="card" style="max-width: 480px; margin: 30px auto;">
-      <h2 id="t-auth-title" style="margin-top: 0;">Login to Avadi Gig Portal</h2>
-      <input id="auth-email" class="input-field" type="email" placeholder="Email address" />
-      
-      <div id="register-fields" style="display: none;">
-        <input id="auth-name" class="input-field" type="text" placeholder="Full Name" />
-        <input id="auth-phone" class="input-field" type="tel" placeholder="Mobile Phone Number (10 Digits)" />
-        
-        <select id="auth-role" class="input-field" onchange="toggleRoleFields()">
-          <option value="customer" id="t-opt-customer">Customer (Seeking Services)</option>
-          <option value="provider" id="t-opt-provider">Provider (Worker / Cooperative Member)</option>
-        </select>
-
-        <div id="customer-details">
-          <input id="auth-cust-address" class="input-field" type="text" placeholder="Complete Street Address / Door No (Avadi)" />
-        </div>
-        
-        <div id="provider-details" style="display: none;">
-          <input id="auth-service" class="input-field" type="text" placeholder="Trade (e.g. Electrician, Plumber)" />
-          <input id="auth-area" class="input-field" type="text" placeholder="Avadi Locality (e.g. Gandhi Nagar)" />
-          
-          <label style="font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">
-            💰 Your Standard Service Rate (₹)
-          </label>
-          <input id="auth-base-rate" class="input-field" type="number" value="250" placeholder="Set your fixed rate" />
-
-          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-            <label style="font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">
-              🛡️ Cooperative Identity Verification
-            </label>
-            <select id="auth-id-type" class="input-field" style="margin-bottom: 8px;" onchange="updateIdPlaceholder()">
-              <option value="aadhaar">Aadhaar Card (12 Digits)</option>
-              <option value="pan">PAN Card (10 Characters)</option>
-            </select>
-            <input id="auth-id-number" class="input-field" style="margin-bottom: 4px;" type="text" placeholder="Enter 12-digit Aadhaar Number" />
-            <small style="font-size: 11px; color: #64748b;">Masked & stored for statutory cooperative compliance.</small>
+    <div id="auth-view">
+      <div class="card" id="login-box" style="max-width: 480px; margin: 40px auto;">
+        <h2 style="margin-bottom: 16px;">Login to Portal</h2>
+        <form onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label>Registered Email</label>
+            <input type="email" id="login-email" placeholder="e.g. ramesh.k@gmail.com" required />
           </div>
-        </div>
-
-        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 12px; color: #1e40af;">
-          📍 <strong>GPS Requirement</strong>: Submitting registration requests your browser's location access to pair nearby bookings accurately.
-        </div>
+          <button type="submit" class="btn" style="width: 100%;">Sign In</button>
+        </form>
+        <p style="margin-top: 14px; text-align: center; font-size: 13px;">
+          New user? <a href="#" onclick="showRegisterForm(event)">Register here</a>
+        </p>
       </div>
 
-      <button id="auth-submit" class="btn-primary" style="width: 100%;" onclick="handleAuth()">Login</button>
-      <p style="text-align: center; margin-top: 14px; font-size: 14px;">
-        <a href="javascript:void(0)" id="auth-toggle" onclick="toggleAuthMode()">Don't have an account? Register</a>
-      </p>
+      <div class="card" id="register-box" style="max-width: 520px; margin: 40px auto; display: none;">
+        <h2 style="margin-bottom: 16px;">Register Account</h2>
+        <form onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <input type="email" id="reg-email" placeholder="Email Address" required />
+          </div>
+          <div class="form-group">
+            <input type="text" id="reg-name" placeholder="Full Name" required />
+          </div>
+          <div class="form-group">
+            <input type="tel" id="reg-phone" placeholder="Phone Number (e.g. 9840112233)" required />
+          </div>
+          <div class="form-group">
+            <select id="reg-role" onchange="toggleRoleFields()">
+              <option value="customer">Customer (Seeking Services)</option>
+              <option value="provider">Service Provider (Gig Worker)</option>
+            </select>
+          </div>
+          <div class="form-group" id="service-field" style="display: none;">
+            <select id="reg-service">
+              <option value="Electrician">Electrician</option>
+              <option value="Plumber">Plumber</option>
+              <option value="Carpenter">Carpenter</option>
+              <option value="Appliance Repair">Appliance Repair</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <input type="text" id="reg-address" placeholder="Physical Address (e.g. 14, 2nd Main Rd, Gandhi Nagar, Avadi)" required />
+          </div>
+          <div class="form-group">
+            <select id="reg-area">
+              <option value="Gandhi Nagar">Gandhi Nagar</option>
+              <option value="Avadi Checkpost">Avadi Checkpost</option>
+              <option value="HVF Estate">HVF Estate</option>
+              <option value="Pattabiram">Pattabiram</option>
+            </select>
+          </div>
+          <button type="submit" class="btn" style="width: 100%;">Register & Enter</button>
+        </form>
+        <p style="margin-top: 14px; text-align: center; font-size: 13px;">
+          Already have an account? <a href="#" onclick="showLoginForm(event)">Login</a>
+        </p>
+      </div>
     </div>
 
     <!-- Customer Dashboard -->
     <div id="customer-view" style="display: none;">
       <div class="card">
-        <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
           <div>
-            <h2 id="t-cust-title">Customer Portal</h2>
-            <p style="margin: 4px 0 0 0; color: #64748b;">Welcome, <span id="cust-name"></span> &bull; 📍 <span id="cust-address-display"></span></p>
+            <h2>Customer Portal</h2>
+            <p id="cust-welcome" style="color: var(--text-muted); font-size: 14px;"></p>
           </div>
-          <button class="btn-secondary" onclick="logout()">Logout</button>
+          <button class="btn btn-secondary" onclick="logout()">Logout</button>
         </div>
 
-        <h3 id="t-find-heading">Find Registered Cooperative Providers</h3>
-        <p style="font-size: 13px; color: #64748b; margin: 4px 0 16px 0;" id="t-fair-desc">
-          ⚡ Only <strong>active, on-duty</strong> providers ranked via Fair Job Distribution.
-        </p>
-
-        <div class="filter-group">
-          <input id="search-input" class="input-field" style="margin: 0; flex: 2; min-width: 180px;" type="text" placeholder="Search by service or worker name..." oninput="filterProviders()" />
-          
-          <select id="locality-select" class="input-field" style="margin: 0; flex: 1; min-width: 150px;" onchange="filterProviders()">
+        <h3 style="margin-bottom: 12px;">Find Registered Cooperative Providers</h3>
+        <div class="grid" style="grid-template-columns: 2fr 1.5fr 1.5fr; margin-bottom: 16px;">
+          <input type="text" id="search-service" placeholder="Search service (e.g. Electrician)" oninput="filterProviders()" />
+          <select id="filter-area" onchange="filterProviders()">
             <option value="">All Avadi Areas</option>
             <option value="Gandhi Nagar">Gandhi Nagar</option>
-            <option value="HVF Road">HVF Road</option>
             <option value="Avadi Checkpost">Avadi Checkpost</option>
+            <option value="HVF Estate">HVF Estate</option>
             <option value="Pattabiram">Pattabiram</option>
-            <option value="Mitnamalli">Mitnamalli</option>
           </select>
-
-          <select id="sort-select" class="input-field" style="margin: 0; flex: 1.2; min-width: 180px; font-weight: 600;" onchange="filterProviders()">
-            <option value="fair">⚖️ Sort: Fair Workload</option>
+          <select id="sort-criteria" onchange="filterProviders()">
             <option value="rating">★ Sort: Highest Rating</option>
-            <option value="cost_asc">💰 Sort: Cost (Low to High)</option>
+            <option value="cost">💰 Sort: Cost (Low to High)</option>
             <option value="emergency">🚨 Emergency (Nearest First)</option>
           </select>
         </div>
@@ -160,781 +147,514 @@
       </div>
 
       <div class="card">
-        <h3 id="t-booked-heading">Your Booked Requests & Real-Time Tracking</h3>
-        <p style="font-size: 13px; color: #64748b; margin: 4px 0 16px 0;" id="t-otp-desc">
-          Workers have 90 seconds to respond. Once accepted, live route tracking activates. Share OTP only upon service completion.
-        </p>
-        <div id="customer-orders-list"></div>
+        <h3>Your Booked Requests & Real-Time Tracking</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Share OTP with provider upon completion. You can rate the service afterwards.</p>
+        <div id="customer-orders"></div>
       </div>
     </div>
 
     <!-- Provider Dashboard -->
     <div id="provider-view" style="display: none;">
       <div class="card">
-        <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <h2 id="t-prov-title">Provider Workstation</h2>
-            <p style="margin: 4px 0 0 0; color: #64748b;">
-              Welcome, <span id="prov-name"></span> (<span id="prov-trade"></span>) 
-              <span id="prov-badge-container"></span>
-            </p>
+            <h2>Provider Workstation</h2>
+            <p id="prov-welcome" style="color: var(--text-muted); font-size: 14px;"></p>
           </div>
-          <div style="display: flex; gap: 12px; align-items: center;">
-            <label class="toggle-switch">
-              <input type="checkbox" id="avail-toggle" onchange="toggleAvailability(this.checked)" checked>
-              <span id="avail-label" style="color: #16a34a;">🟢 Duty: Available</span>
-            </label>
-            <button class="btn-secondary" onclick="logout()">Logout</button>
-          </div>
-        </div>
-
-        <!-- Rate Bar -->
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <strong>💼 Your Fixed Service Rate</strong>
-            <div style="font-size: 13px; color: #64748b;">Update anytime. Customers immediately see your new rate.</div>
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <span style="font-size: 16px; font-weight: bold;">₹</span>
-            <input id="my-fixed-rate" type="number" style="width: 110px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: bold;" />
-            <button class="btn-primary" id="btn-update-rate" onclick="updateMyRate()">Update Rate</button>
+            <button id="duty-btn" class="btn btn-success" onclick="toggleDuty()">🟢 Duty: Available</button>
+            <button class="btn btn-secondary" style="margin-left: 8px;" onclick="logout()">Logout</button>
           </div>
         </div>
+      </div>
 
-        <div class="stats-grid">
-          <div class="stat-card">
-            <p style="color: #64748b; font-size: 13px; margin: 0;" id="t-stat-completed">Completed Jobs</p>
-            <h2 id="stat-jobs" style="margin-top: 4px;">0</h2>
-          </div>
-          <div class="stat-card">
-            <p style="color: #64748b; font-size: 13px; margin: 0;" id="t-stat-payout">Direct Payout (98%)</p>
-            <h2 id="stat-earnings" style="color: #16a34a; margin-top: 4px;">₹0</h2>
-          </div>
-          <div class="stat-card">
-            <p style="color: #64748b; font-size: 13px; margin: 0;" id="t-stat-welfare">Welfare Fund (2%)</p>
-            <h2 id="stat-welfare" style="color: #2563eb; margin-top: 4px;">₹0</h2>
-          </div>
-          <div class="stat-card">
-            <p style="color: #64748b; font-size: 13px; margin: 0;" id="t-stat-trust">Trust Rating</p>
-            <h2 id="stat-rating" style="color: #ca8a04; margin-top: 4px;">5.0 ★</h2>
-          </div>
-        </div>
+      <div class="card">
+        <h3>Pending Incoming Job Requests</h3>
+        <div id="incoming-orders"></div>
+      </div>
 
-        <h3 id="t-prov-incoming">Incoming Customer Bookings & Destination Map</h3>
-        <div id="provider-orders-list" style="margin-top: 16px;"></div>
+      <div class="card">
+        <h3>Active & Completed Jobs</h3>
+        <div id="provider-history"></div>
       </div>
     </div>
 
-    <!-- Admin View -->
+    <!-- Federation Audit Dashboard Modal -->
     <div id="admin-view" style="display: none;">
       <div class="card">
-        <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
           <div>
             <h2>🏛️ Avadi Municipal Cooperative Federation Audit</h2>
-            <p style="margin: 4px 0 0 0; color: #64748b;">Regulatory compliance, financial transparency & workload fairness ledger</p>
+            <p style="font-size: 13px; color: var(--text-muted);">Regulatory compliance, financial transparency & workload fairness ledger</p>
           </div>
-          <button class="btn-secondary" onclick="closeAdminAudit()">Back to App</button>
+          <button class="btn btn-secondary" onclick="closeAdminAudit()">Back to App</button>
         </div>
 
-        <div class="stats-grid">
-          <div class="stat-card">
-            <p style="color: #64748b; font-size: 13px; margin: 0;">Gross Municipal Volume</p>
-            <h2 id="adm-gmv" style="margin-top: 4px; color: #0f172a;">₹0</h2>
+        <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
+          <div style="background:#f1f5f9; padding: 14px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 12px; color: var(--text-muted);">Gross Municipal Volume</div>
+            <div id="metric-gmv" style="font-size: 22px; font-weight: 700;">₹0</div>
           </div>
-          <div class="stat-card">
-            <p style="color: #64748b; font-size: 13px; margin: 0;">Cooperative Welfare Escrow (2%)</p>
-            <h2 id="adm-welfare" style="color: #2563eb; margin-top: 4px;">₹0</h2>
+          <div style="background:#f1f5f9; padding: 14px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 12px; color: var(--text-muted);">Cooperative Welfare Escrow (2%)</div>
+            <div id="metric-escrow" style="font-size: 22px; font-weight: 700; color: #2563eb;">₹0</div>
           </div>
-          <div class="stat-card">
-            <p style="color: #64748b; font-size: 13px; margin: 0;">Direct Worker Payouts (98%)</p>
-            <h2 id="adm-payout" style="color: #16a34a; margin-top: 4px;">₹0</h2>
+          <div style="background:#f1f5f9; padding: 14px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 12px; color: var(--text-muted);">Direct Worker Payouts (98%)</div>
+            <div id="metric-payout" style="font-size: 22px; font-weight: 700; color: var(--success);">₹0</div>
           </div>
-          <div class="stat-card">
-            <p style="color: #64748b; font-size: 13px; margin: 0;">KYC Compliance Rate</p>
-            <h2 id="adm-kyc" style="color: #0d9488; margin-top: 4px;">0%</h2>
+          <div style="background:#f1f5f9; padding: 14px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 12px; color: var(--text-muted);">KYC Compliance Rate</div>
+            <div id="metric-kyc" style="font-size: 22px; font-weight: 700; color: #0891b2;">0%</div>
           </div>
         </div>
 
-        <div style="margin-top: 28px;">
-          <h3>Fair Workload Distribution Audit</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Member Name</th>
-                <th>Trade & Locality</th>
-                <th>Duty Status</th>
-                <th>KYC Verification</th>
-                <th>Fixed Rate</th>
-                <th>Rating</th>
-                <th>Jobs</th>
-                <th>Net Payout (98%)</th>
-              </tr>
-            </thead>
-            <tbody id="adm-workers-tbody"></tbody>
-          </table>
-        </div>
+        <h3>Fair Workload Distribution Audit</h3>
+        <table id="workload-table">
+          <thead>
+            <tr>
+              <th>Member Name</th>
+              <th>Trade & Locality</th>
+              <th>Duty Status</th>
+              <th>KYC</th>
+              <th>Rate</th>
+              <th>Rating</th>
+              <th>Jobs</th>
+              <th>Net Payout (98%)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
 
-        <div style="margin-top: 28px;">
-          <h3>Immutable Order & Handshake Ledger</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Order #</th>
-                <th>Timestamp</th>
-                <th>Customer</th>
-                <th>Provider</th>
-                <th>Trade</th>
-                <th>Amount</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="adm-orders-tbody"></tbody>
-          </table>
-        </div>
+        <h3 style="margin-top: 24px;">Immutable Order & Handshake Ledger</h3>
+        <table id="ledger-table">
+          <thead>
+            <tr>
+              <th>Order #</th>
+              <th>Customer</th>
+              <th>Provider</th>
+              <th>Trade</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
     </div>
-
   </div>
 
   <script>
-    let currentUser = JSON.parse(localStorage.getItem('avadi_user') || 'null');
-    let isRegisterMode = false;
+    let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
     let allProviders = [];
-    let currentLang = 'en';
-    let syncTimer = null;
-    let activeLeafletMaps = {}; 
-    let activeMarkers = {}; 
-    let activePolylines = {}; 
-    let warnedExpiredOrders = new Set();
 
-    const avadiCoordinates = {
-      "Avadi Checkpost": { lat: 13.1189, lng: 80.1018 },
-      "Gandhi Nagar": { lat: 13.1256, lng: 80.1085 },
-      "HVF Road": { lat: 13.1368, lng: 80.0982 },
-      "Pattabiram": { lat: 13.1245, lng: 80.0631 },
-      "Mitnamalli": { lat: 13.1552, lng: 80.1120 }
-    };
-
-    // Haversine distance formula returning meters / kilometers
     function calculateDistance(lat1, lon1, lat2, lon2) {
-      if (!lat1 || !lon1 || !lat2 || !lon2) return null;
-      const R = 6371; // km
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      const d = R * c;
-      if (d < 1) {
-        return Math.round(d * 1000) + ' m';
-      }
-      return d.toFixed(1) + ' km';
-    }
-
-    function calculateDistanceNumeric(lat1, lon1, lat2, lon2) {
-      if (!lat1 || !lon1 || !lat2 || !lon2) return 9999;
+      if (!lat1 || !lon1 || !lat2 || !lon2) return 1.5;
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return Math.round((R * c) * 10) / 10;
     }
 
-    const translations = {
-      en: {
-        authTitle: "Login to Avadi Gig Portal",
-        custTitle: "Customer Portal",
-        provTitle: "Provider Workstation",
-        findHeading: "Find Registered Cooperative Providers",
-        fairDesc: "⚡ Only active, on-duty providers ranked via Fair Job Distribution.",
-        bookedHeading: "Your Booked Requests & Real-Time Tracking",
-        otpDesc: "Workers have 90 seconds to respond. Once accepted, live route tracking activates. Share OTP only upon service completion.",
-        completed: "Completed Jobs",
-        payout: "Direct Payout (98%)",
-        welfare: "Welfare Fund (2%)",
-        trust: "Trust Rating",
-        incoming: "Incoming Customer Bookings & Destination Map",
-        bookBtn: "Book Service",
-        ratePrompt: "Rate service quality (1 to 5 stars):",
-        availOn: "🟢 Duty: Available",
-        availOff: "🔴 Duty: On Break"
-      },
-      ta: {
-        authTitle: "ஆவடி கூட்டுறவு சேவை தளம் - உள்நுழைக",
-        custTitle: "வாடிக்கையாளர் பக்கம் (Customer Portal)",
-        provTitle: "பணியாளர் பணிநிலையம் (Provider Workstation)",
-        findHeading: "பதிவுசெய்த கூட்டுறவு பணியாளர்கள்",
-        fairDesc: "⚡ பணியில் உள்ள (Active) தொழிலாளர்கள் மட்டுமே காண்பிக்கப்படுகின்றனர்.",
-        bookedHeading: "உங்கள் முன்பதிவுகள் & நேரடி இருப்பிட கண்காணிப்பு",
-        otpDesc: "பணியாளர் ஏற்க 90 வினாடிகள் அவகாசம் உள்ளது. ஏற்றதும் வழித்தடம் தெரியும். பணி முடிந்ததும் OTP பகிரவும்.",
-        completed: "முடிந்த பணிகள்",
-        payout: "நேரடி வருமானம் (98%)",
-        welfare: "கூட்டுறவு நல நிதி (2%)",
-        trust: "நம்பகத்தன்மை மதிப்பீடு",
-        incoming: "வந்த முன்பதிவு கோரிக்கைகள் & வாடிக்கையாளர் வரைபடம்",
-        bookBtn: "முன்பதிவு செய்",
-        ratePrompt: "பணியாளருக்கு மதிப்பீடு வழங்கவும் (1 முதல் 5 வரை):",
-        availOn: "🟢 பணியில் உள்ளேன்",
-        availOff: "🔴 ஓய்வில் உள்ளேன்"
-      }
-    };
-
-    function showToast(msg) {
-      const t = document.getElementById('toast-banner');
-      t.innerText = msg;
-      t.style.display = 'block';
-      setTimeout(() => { t.style.display = 'none'; }, 3200);
+    function showRegisterForm(e) {
+      if (e) e.preventDefault();
+      document.getElementById('login-box').style.display = 'none';
+      document.getElementById('register-box').style.display = 'block';
     }
 
-    function updateIdPlaceholder() {
-      const type = document.getElementById('auth-id-type').value;
-      const input = document.getElementById('auth-id-number');
-      input.placeholder = type === 'aadhaar' ? 'Enter 12-digit Aadhaar Number' : 'Enter 10-character PAN';
-    }
-
-    function toggleLanguage() {
-      currentLang = currentLang === 'en' ? 'ta' : 'en';
-      const t = translations[currentLang];
-      document.getElementById('t-auth-title').innerText = t.authTitle;
-      document.getElementById('t-cust-title').innerText = t.custTitle;
-      document.getElementById('t-prov-title').innerText = t.provTitle;
-      document.getElementById('t-find-heading').innerText = t.findHeading;
-      document.getElementById('t-fair-desc').innerText = t.fairDesc;
-      document.getElementById('t-booked-heading').innerText = t.bookedHeading;
-      document.getElementById('t-otp-desc').innerText = t.otpDesc;
-      document.getElementById('t-stat-completed').innerText = t.completed;
-      document.getElementById('t-stat-payout').innerText = t.payout;
-      document.getElementById('t-stat-welfare').innerText = t.welfare;
-      document.getElementById('t-stat-trust').innerText = t.trust;
-      document.getElementById('t-prov-incoming').innerText = t.incoming;
-      filterProviders();
-    }
-
-    function toggleAuthMode() {
-      isRegisterMode = !isRegisterMode;
-      document.getElementById('t-auth-title').innerText = isRegisterMode ? 'Register Account' : translations[currentLang].authTitle;
-      document.getElementById('register-fields').style.display = isRegisterMode ? 'block' : 'none';
-      document.getElementById('auth-submit').innerText = isRegisterMode ? 'Register & Enter' : 'Login';
-      document.getElementById('auth-toggle').innerText = isRegisterMode ? 'Already have an account? Login' : "Don't have an account? Register";
+    function showLoginForm(e) {
+      if (e) e.preventDefault();
+      document.getElementById('register-box').style.display = 'none';
+      document.getElementById('login-box').style.display = 'block';
     }
 
     function toggleRoleFields() {
-      const isProvider = document.getElementById('auth-role').value === 'provider';
-      document.getElementById('provider-details').style.display = isProvider ? 'block' : 'none';
-      document.getElementById('customer-details').style.display = isProvider ? 'none' : 'block';
+      const role = document.getElementById('reg-role').value;
+      document.getElementById('service-field').style.display = role === 'provider' ? 'block' : 'none';
     }
 
-    async function handleAuth() {
-      const email = document.getElementById('auth-email').value.trim();
-      if (!email) return alert('Please enter email');
-
-      if (isRegisterMode) {
-        const name = document.getElementById('auth-name').value.trim();
-        const phone = document.getElementById('auth-phone').value.trim();
-        const role = document.getElementById('auth-role').value;
-        const address = document.getElementById('auth-cust-address').value.trim();
-        const service = document.getElementById('auth-service').value.trim();
-        const area = document.getElementById('auth-area').value.trim();
-        const base_rate = document.getElementById('auth-base-rate').value.trim();
-        const id_type = document.getElementById('auth-id-type').value;
-        const id_number = document.getElementById('auth-id-number').value.trim();
-
-        if (!phone) return alert('Phone number is required for registration.');
-        if (role === 'customer' && !address) return alert('Complete address is required for customer registration.');
-
-        // Fetch user location
-        let lat = avadiCoordinates["Gandhi Nagar"].lat;
-        let lng = avadiCoordinates["Gandhi Nagar"].lng;
-        if (navigator.geolocation) {
-          try {
-            const pos = await new Promise((resolve, reject) => {
-              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-            });
-            lat = pos.coords.latitude;
-            lng = pos.coords.longitude;
-          } catch (e) {
-            console.log('Location permission denied or timed out; standard Avadi centroid assigned.');
-          }
-        }
-
-        const res = await fetch('/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, phone, address, role, service, area, base_rate, id_type, id_number, lat, lng })
-        });
-        const data = await res.json();
-        if (data.error) return alert(data.error);
-        currentUser = data;
-      } else {
-        const res = await fetch('/api/login', {
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      try {
+        const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
         });
         const data = await res.json();
-        if (data.error) return alert(data.error);
-        currentUser = data;
+        if (data.success) {
+          currentUser = data.user;
+          localStorage.setItem('currentUser', JSON.stringify(currentUser));
+          loadDashboard();
+        } else {
+          alert(data.message || 'User not registered');
+        }
+      } catch (err) {
+        alert('Server error: ' + err.message);
+      }
+    }
+
+    async function handleRegister(e) {
+      if (e) e.preventDefault();
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const role = document.getElementById('reg-role').value;
+      const phone = document.getElementById('reg-phone').value.trim();
+      const address = document.getElementById('reg-address').value.trim();
+      const area = document.getElementById('reg-area').value;
+      const service = role === 'provider' ? document.getElementById('reg-service').value : null;
+
+      if (!name || !email) {
+        alert('Please fill in your name and email');
+        return;
       }
 
-      localStorage.setItem('avadi_user', JSON.stringify(currentUser));
-      document.getElementById('auth-view').style.display = 'none';
-      loadDashboard();
-      startAutoSync();
+      const executeRegister = async (lat, lng) => {
+        try {
+          const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name, email, role, phone, address, area, service,
+              lat: lat || 13.1147,
+              lng: lng || 80.1018,
+              base_rate: 250
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            currentUser = data.user;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            loadDashboard();
+          } else {
+            alert(data.message || 'Registration failed');
+          }
+        } catch (err) {
+          alert('Registration error: ' + err.message);
+        }
+      };
+
+      let sent = false;
+      const fallbackTimer = setTimeout(() => {
+        if (!sent) {
+          sent = true;
+          executeRegister(13.1147, 80.1018);
+        }
+      }, 800);
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            if (!sent) {
+              sent = true;
+              clearTimeout(fallbackTimer);
+              executeRegister(pos.coords.latitude, pos.coords.longitude);
+            }
+          },
+          () => {
+            if (!sent) {
+              sent = true;
+              clearTimeout(fallbackTimer);
+              executeRegister(13.1147, 80.1018);
+            }
+          },
+          { timeout: 800, maximumAge: 60000 }
+        );
+      } else {
+        sent = true;
+        clearTimeout(fallbackTimer);
+        executeRegister(13.1147, 80.1018);
+      }
     }
 
     function logout() {
-      clearInterval(syncTimer);
+      localStorage.removeItem('currentUser');
       currentUser = null;
-      localStorage.removeItem('avadi_user');
       document.getElementById('auth-view').style.display = 'block';
       document.getElementById('customer-view').style.display = 'none';
       document.getElementById('provider-view').style.display = 'none';
       document.getElementById('admin-view').style.display = 'none';
+      showLoginForm();
     }
 
-    function startAutoSync() {
-      clearInterval(syncTimer);
-      syncTimer = setInterval(async () => {
-        if (!currentUser) return;
-        if (currentUser.role === 'customer') {
-          await fetchCustomerOrders();
-          await fetchProviders();
-        } else if (currentUser.role === 'provider') {
-          await fetchProviderOrders();
-        }
-      }, 2000);
-    }
-
-    function loadDashboard() {
+    async function loadDashboard() {
       if (!currentUser) return;
       document.getElementById('auth-view').style.display = 'none';
+      document.getElementById('admin-view').style.display = 'none';
 
       if (currentUser.role === 'customer') {
         document.getElementById('customer-view').style.display = 'block';
-        document.getElementById('cust-name').innerText = currentUser.name;
-        document.getElementById('cust-address-display').innerText = currentUser.address || 'Avadi';
-        fetchProviders();
-        fetchCustomerOrders();
+        document.getElementById('provider-view').style.display = 'none';
+        document.getElementById('cust-welcome').textContent = `Welcome, ${currentUser.name} • 📍 ${currentUser.area || 'Avadi'}`;
+        await fetchProviders();
+        await fetchCustomerOrders();
       } else {
+        document.getElementById('customer-view').style.display = 'none';
         document.getElementById('provider-view').style.display = 'block';
-        document.getElementById('prov-name').innerText = currentUser.name;
-        document.getElementById('prov-trade').innerText = currentUser.service || 'Cooperative Worker';
-        
-        const rateInput = document.getElementById('my-fixed-rate');
-        rateInput.value = currentUser.base_rate || 250;
-
-        const badgeCont = document.getElementById('prov-badge-container');
-        if (currentUser.is_verified) {
-          badgeCont.innerHTML = `<span class="badge badge-verified">🛡️ KYC Verified</span>`;
-        }
-        
-        const isAvail = currentUser.is_available === 1;
-        document.getElementById('avail-toggle').checked = isAvail;
-        updateAvailLabel(isAvail);
-        fetchProviderOrders();
+        document.getElementById('prov-welcome').textContent = `${currentUser.name} (${currentUser.service}) • 📍 ${currentUser.area || 'Avadi'}`;
+        updateDutyButton(currentUser.is_available);
+        await fetchProviderOrders();
       }
-    }
-
-    async function updateMyRate() {
-      const rateInput = document.getElementById('my-fixed-rate');
-      const btn = document.getElementById('btn-update-rate');
-      const rate = parseInt(rateInput.value);
-
-      if (!rate || rate < 50) return showToast('Please enter a valid rate (min ₹50)');
-
-      btn.disabled = true;
-      btn.innerText = 'Saving...';
-
-      try {
-        const res = await fetch('/api/provider/rate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ provider_id: currentUser.id, base_rate: rate })
-        });
-        const data = await res.json();
-        currentUser.base_rate = data.base_rate;
-        localStorage.setItem('avadi_user', JSON.stringify(currentUser));
-        showToast(`Rate updated to ₹${data.base_rate}`);
-      } catch (err) {
-        showToast('Failed to update rate');
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Update Rate';
-      }
-    }
-
-    async function toggleAvailability(checked) {
-      currentUser.is_available = checked ? 1 : 0;
-      localStorage.setItem('avadi_user', JSON.stringify(currentUser));
-      updateAvailLabel(checked);
-
-      await fetch('/api/provider/availability', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider_id: currentUser.id, is_available: checked })
-      });
-
-      showToast(checked ? 'You are now Online' : 'You are now on Break');
-    }
-
-    function updateAvailLabel(isAvail) {
-      const lbl = document.getElementById('avail-label');
-      lbl.innerText = isAvail ? translations[currentLang].availOn : translations[currentLang].availOff;
-      lbl.style.color = isAvail ? '#16a34a' : '#dc2626';
     }
 
     async function fetchProviders() {
-      const res = await fetch('/api/providers');
-      allProviders = await res.json();
-      filterProviders();
+      try {
+        const res = await fetch('/api/providers');
+        allProviders = await res.json();
+        filterProviders();
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     function filterProviders() {
-      const q = document.getElementById('search-input')?.value.toLowerCase() || '';
-      const loc = document.getElementById('locality-select')?.value.toLowerCase() || '';
-      const sortBy = document.getElementById('sort-select')?.value || 'fair';
+      const search = (document.getElementById('search-service').value || '').toLowerCase().trim();
+      const area = document.getElementById('filter-area').value;
+      const sort = document.getElementById('sort-criteria').value;
+
+      const cLat = currentUser?.lat || 13.1147;
+      const cLng = currentUser?.lng || 80.1018;
 
       let filtered = allProviders.filter(p => {
-        const isOnline = p.is_available === 1;
-        const matchQ = (p.name && p.name.toLowerCase().includes(q)) || (p.service && p.service.toLowerCase().includes(q));
-        const matchLoc = !loc || (p.area && p.area.toLowerCase().includes(loc));
-        return isOnline && matchQ && matchLoc;
+        const matchService = !search || (p.service && p.service.toLowerCase().includes(search));
+        const matchArea = !area || p.area === area;
+        return matchService && matchArea && (p.is_available === 1);
       });
 
-      // Customer Filter & Sort
-      const custLat = currentUser?.lat || 13.1189;
-      const custLng = currentUser?.lng || 80.1018;
+      filtered.forEach(p => {
+        p.calcDistance = calculateDistance(cLat, cLng, p.lat || 13.1147, p.lng || 80.1018);
+      });
 
-      if (sortBy === 'rating') {
-        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      } else if (sortBy === 'cost_asc') {
-        filtered.sort((a, b) => (a.base_rate || 0) - (b.base_rate || 0));
-      } else if (sortBy === 'emergency') {
-        filtered.sort((a, b) => {
-          const dA = calculateDistanceNumeric(custLat, custLng, a.lat, a.lng);
-          const dB = calculateDistanceNumeric(custLat, custLng, b.lat, b.lng);
-          return dA - dB;
-        });
-      } else {
-        // Fair Opportunity Distribution (fewer jobs today prioritized)
-        filtered.sort((a, b) => (a.jobs_today || 0) - (b.jobs_today || 0));
-      }
+      if (sort === 'rating') filtered.sort((a, b) => (b.rating || 5) - (a.rating || 5));
+      else if (sort === 'cost') filtered.sort((a, b) => (a.base_rate || 250) - (b.base_rate || 250));
+      else if (sort === 'emergency') filtered.sort((a, b) => a.calcDistance - b.calcDistance);
 
-      renderProviders(filtered);
-    }
-
-    function renderProviders(list) {
-      const container = document.getElementById('providers-list');
-      if (!container) return;
-      if (!list.length) {
-        container.innerHTML = '<p style="color: #64748b;">No available workers match your filter criteria right now.</p>';
+      const listDiv = document.getElementById('providers-list');
+      if (filtered.length === 0) {
+        listDiv.innerHTML = `<p style="color: var(--text-muted); font-size: 14px; padding: 12px 0;">No available workers match your filter criteria right now.</p>`;
         return;
       }
 
-      const custLat = currentUser?.lat || 13.1189;
-      const custLng = currentUser?.lng || 80.1018;
-
-      container.innerHTML = list.map(p => {
-        const distStr = calculateDistance(custLat, custLng, p.lat, p.lng);
-        return `
-          <div class="list-item">
-            <div class="list-item-row">
-              <div>
-                <strong>${p.name}</strong>
-                ${p.is_verified ? `<span class="badge badge-verified" style="margin-left: 6px;">🛡️ KYC Verified</span>` : ''}
-                <span style="color: #ca8a04; font-size: 13px; font-weight: bold; margin-left: 6px;">★ ${p.rating || 5.0}</span>
-                ${distStr ? `<span class="badge badge-distance" style="margin-left: 6px;">📍 ${distStr} away</span>` : ''}
-                ${p.jobs_today <= 2 ? '<span class="badge badge-fair" style="margin-left: 6px;">Fair Pick</span>' : ''}
-                <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
-                  ${p.service} &bull; 📍 ${p.area || 'Avadi'} &bull; <span class="rate-pill">Rate: ₹${p.base_rate || 250}</span> &bull; Jobs Today: ${p.jobs_today}
-                </div>
-              </div>
-              <button class="btn-primary" onclick="bookProvider(${p.id}, '${p.name}', '${p.service}', '${p.area || 'Avadi Checkpost'}')">
-                ${translations[currentLang].bookBtn} (₹${p.base_rate || 250})
-              </button>
+      listDiv.innerHTML = filtered.map(p => `
+        <div class="worker-card">
+          <div>
+            <div style="font-weight: 600; font-size: 16px;">${p.name} <span class="badge badge-success">★ ${p.rating || 5.0}</span></div>
+            <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+              ${p.service} • ${p.area} • <b>📍 ${p.calcDistance} km away</b>
             </div>
+            <div style="font-size: 13px; color: #15803d; font-weight: 600; margin-top: 4px;">Fixed Municipal Rate: ₹${p.base_rate || 250}</div>
           </div>
-        `;
-      }).join('');
+          <button class="btn" onclick="bookProvider(${p.id}, '${p.name}', '${p.service}', ${p.base_rate || 250})">Book Service</button>
+        </div>
+      `).join('');
     }
 
-    async function bookProvider(id, name, service, defaultArea) {
-      let custLat = currentUser?.lat || avadiCoordinates[defaultArea]?.lat || 13.1189;
-      let custLng = currentUser?.lng || avadiCoordinates[defaultArea]?.lng || 80.1018;
+    async function bookProvider(providerId, providerName, service, amount) {
+      const payload = {
+        customer_id: currentUser.id,
+        customer_name: currentUser.name,
+        customer_phone: currentUser.phone || '9840112233',
+        customer_address: currentUser.address || 'Gandhi Nagar, Avadi',
+        client_lat: currentUser.lat || 13.1147,
+        client_lng: currentUser.lng || 80.1018,
+        provider_id: providerId,
+        provider_name: providerName,
+        service: service,
+        amount: amount
+      };
 
-      if (navigator.geolocation) {
-        try {
-          const pos = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3500 });
-          });
-          custLat = pos.coords.latitude;
-          custLng = pos.coords.longitude;
-        } catch (e) {
-          console.log("Using cached coordinates");
+      try {
+        const res = await fetch('/api/orders/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Request dispatched! Provider has 90s to accept.');
+          fetchCustomerOrders();
         }
+      } catch (err) {
+        alert(err.message);
       }
-
-      const res = await fetch('/api/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customer_id: currentUser.id,
-          customer_name: currentUser.name,
-          customer_phone: currentUser.phone,
-          customer_address: currentUser.address,
-          provider_id: id,
-          provider_name: name,
-          service,
-          customer_lat: custLat,
-          customer_lng: custLng
-        })
-      });
-      const data = await res.json();
-      showToast(data.message);
-      fetchCustomerOrders();
     }
 
     async function fetchCustomerOrders() {
-      const res = await fetch('/api/orders/customer/' + currentUser.id);
-      const orders = await res.json();
-      const container = document.getElementById('customer-orders-list');
-      if (!container) return;
-      if (!orders.length) {
-        container.innerHTML = '<p style="color: #64748b;">No bookings placed yet.</p>';
+      try {
+        const res = await fetch(`/api/orders/user/${currentUser.id}`);
+        const orders = await res.json();
+        const container = document.getElementById('customer-orders');
+        if (orders.length === 0) {
+          container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px;">No active orders.</p>`;
+          return;
+        }
+
+        container.innerHTML = orders.map(o => `
+          <div class="order-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <b>${o.service}</b> with ${o.provider_name}
+                <div style="font-size: 13px; color: var(--text-muted);">Agreed Rate: ₹${o.amount}</div>
+                ${o.status === 'Accepted' ? `<div style="margin-top: 6px; font-weight: 700; color: #2563eb; background: #eff6ff; padding: 4px 8px; border-radius: 4px; display: inline-block;">🔑 Completion OTP: ${o.otp}</div>` : ''}
+              </div>
+              <div style="text-align: right;">
+                ${o.status === 'Requested' ? '<span class="badge badge-warning">⏱️ Awaiting Provider (90s)</span>' : ''}
+                ${o.status === 'Accepted' ? '<span class="badge badge-success">Accepted & Dispatched</span>' : ''}
+                ${o.status === 'Rejected' ? '<span class="badge badge-danger">Rejected</span>' : ''}
+                ${o.status === 'Expired' ? '<span class="badge badge-danger">⏱️ Expired (No Response)</span>' : ''}
+                ${o.status === 'Completed' ? `
+                  <span class="badge badge-success">Completed</span>
+                  <button class="btn" style="padding: 4px 10px; font-size: 12px; margin-left: 8px;" onclick="rateProviderOrder(${o.id})">★ Rate</button>
+                ` : ''}
+                ${o.status === 'Rated' ? '<span class="badge badge-success">✓ Reviewed</span>' : ''}
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function rateProviderOrder(orderId) {
+      const ratingInput = prompt("Rate this service (Enter 1 to 5 stars):", "5");
+      if (!ratingInput) return;
+
+      const rating = parseFloat(ratingInput);
+      if (isNaN(rating) || rating < 1 || rating > 5) {
+        alert("Please enter a valid number between 1 and 5.");
         return;
       }
 
-      orders.forEach(o => {
-        // Feature 3: Alert customer if worker did not accept within 90 seconds
-        if (o.status === 'Expired' && !warnedExpiredOrders.has(o.id)) {
-          warnedExpiredOrders.add(o.id);
-          showToast(`⚠️ Booking #${o.id} expired: Worker did not respond in 90 seconds.`);
+      try {
+        const res = await fetch('/api/orders/rate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_id: orderId, rating })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert("Thank you! Your rating has updated the worker's rating.");
+          fetchCustomerOrders();
+          fetchProviders();
+        } else {
+          alert(data.message || "Failed to submit rating.");
         }
-
-        let existingCard = document.getElementById(`cust-order-${o.id}`);
-        if (!existingCard) {
-          const div = document.createElement('div');
-          div.id = `cust-order-${o.id}`;
-          div.className = 'list-item';
-          div.innerHTML = `
-            <div class="list-item-row">
-              <div>
-                <strong>${o.service}</strong> with ${o.provider_name}
-                <div style="font-size: 13px; color: #64748b; margin-top: 4px;">Agreed Rate: ₹${o.amount}</div>
-              </div>
-              <div id="cust-actions-${o.id}" style="display: flex; align-items: center; gap: 10px;"></div>
-            </div>
-            <div id="map-cust-${o.id}" class="map-box" style="display: none;"></div>
-          `;
-          container.prepend(div);
-          existingCard = div;
-        }
-
-        const actionsBox = document.getElementById(`cust-actions-${o.id}`);
-        actionsBox.innerHTML = `
-          ${o.status === 'Accepted' ? `<span class="otp-box">OTP: ${o.otp}</span>` : ''}
-          <span class="badge badge-${o.status.toLowerCase()}">${o.status === 'Expired' ? '⏱️ Expired (No Response)' : o.status}</span>
-          ${o.status === 'Completed' && !o.rating ? `
-            <button class="btn-outline" style="color: #ca8a04; border-color: #ca8a04;" onclick="rateProvider(${o.id}, ${o.provider_id})">★ Rate</button>
-          ` : ''}
-          ${o.rating ? `<span style="font-size: 13px; color: #ca8a04; font-weight: bold;">Rated: ${o.rating} ★</span>` : ''}
-        `;
-
-        const mapEl = document.getElementById(`map-cust-${o.id}`);
-        if (o.status === 'Accepted' && o.provider_lat && o.provider_lng) {
-          mapEl.style.display = 'block';
-          const custPos = [o.customer_lat, o.customer_lng];
-          const workerPos = [o.provider_lat, o.provider_lng];
-
-          if (!activeLeafletMaps[`cust-${o.id}`]) {
-            const map = L.map(`map-cust-${o.id}`).setView(custPos, 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-            L.marker(custPos).addTo(map).bindPopup("📍 Your Location").openPopup();
-            
-            const workerMarker = L.marker(workerPos).addTo(map).bindPopup("🚗 Worker En Route");
-            const line = L.polyline([workerPos, custPos], {
-              color: '#2563eb',
-              weight: 4,
-              dashArray: '8, 8',
-              opacity: 0.85
-            }).addTo(map);
-
-            activeLeafletMaps[`cust-${o.id}`] = map;
-            activeMarkers[`worker-${o.id}`] = workerMarker;
-            activePolylines[`cust-line-${o.id}`] = line;
-          } else {
-            activeMarkers[`worker-${o.id}`].setLatLng(workerPos);
-            if (activePolylines[`cust-line-${o.id}`]) {
-              activePolylines[`cust-line-${o.id}`].setLatLngs([workerPos, custPos]);
-            }
-          }
-        } else if (o.status !== 'Accepted') {
-          mapEl.style.display = 'none';
-        }
-      });
-    }
-
-    async function rateProvider(orderId, providerId) {
-      const rating = prompt(translations[currentLang].ratePrompt);
-      const rNum = parseInt(rating);
-      if (isNaN(rNum) || rNum < 1 || rNum > 5) return showToast('Enter a rating between 1 and 5');
-
-      await fetch('/api/orders/rate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_id: orderId, provider_id: providerId, rating: rNum })
-      });
-      showToast('Rating submitted');
-      fetchCustomerOrders();
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
     }
 
     async function fetchProviderOrders() {
-      const res = await fetch('/api/orders/provider/' + currentUser.id);
-      const orders = await res.json();
+      try {
+        const res = await fetch(`/api/orders/user/${currentUser.id}`);
+        const orders = await res.json();
 
-      const completed = orders.filter(o => o.status === 'Completed');
-      const totalEarned = completed.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+        const pending = orders.filter(o => o.status === 'Requested');
+        const activeOrCompleted = orders.filter(o => o.status !== 'Requested');
 
-      document.getElementById('stat-jobs').innerText = completed.length;
-      document.getElementById('stat-earnings').innerText = '₹' + Math.round(totalEarned * 0.98);
-      document.getElementById('stat-welfare').innerText = '₹' + Math.round(totalEarned * 0.02);
-
-      const meRes = await fetch('/api/providers');
-      const allP = await meRes.json();
-      const me = allP.find(p => p.id === currentUser.id);
-      if (me) {
-        document.getElementById('stat-rating').innerText = (me.rating || 5.0) + ' ★';
-        currentUser.is_available = me.is_available;
-      }
-
-      const container = document.getElementById('provider-orders-list');
-      if (!container) return;
-      if (!orders.length) {
-        container.innerHTML = '<p style="color: #64748b;">No incoming bookings received yet.</p>';
-        return;
-      }
-
-      orders.forEach(o => {
-        let card = document.getElementById(`prov-order-${o.id}`);
-        const distStr = calculateDistance(currentUser.lat || 13.1256, currentUser.lng || 80.1085, o.customer_lat, o.customer_lng) || 'Nearby';
-
-        if (!card) {
-          const div = document.createElement('div');
-          div.id = `prov-order-${o.id}`;
-          div.className = 'list-item';
-          container.prepend(div);
-          card = div;
-        }
-
-        // Features 2 & 4: Pre-acceptance distance & address + phone reveal on accept
-        card.innerHTML = `
-          <div class="list-item-row">
-            <div>
-              <strong>${o.customer_name}</strong> &bull; ${o.service}
-              <div style="font-size: 13px; color: #475569; margin-top: 3px;">
-                📍 <strong>Address:</strong> ${o.customer_address || 'Avadi Area'} 
-                <span class="badge badge-distance" style="margin-left: 4px;">📏 ${distStr} away</span>
-              </div>
-              ${o.status === 'Accepted' ? `
-                <div style="font-size: 13px; color: #16a34a; font-weight: bold; margin-top: 4px;">
-                  📞 Customer Phone: <a href="tel:${o.customer_phone}">${o.customer_phone || 'Available on request'}</a>
+        const pendingDiv = document.getElementById('incoming-orders');
+        if (pending.length === 0) {
+          pendingDiv.innerHTML = `<p style="color: var(--text-muted); font-size: 13px;">No new incoming requests.</p>`;
+        } else {
+          pendingDiv.innerHTML = pending.map(o => {
+            const dist = calculateDistance(currentUser.lat, currentUser.lng, o.client_lat, o.client_lng);
+            return `
+              <div class="order-card" style="border-left: 4px solid #2563eb;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                  <div>
+                    <h4>${o.service} Request from ${o.customer_name}</h4>
+                    <p style="font-size: 13px; margin: 4px 0;">📍 <b>Customer Location:</b> ${o.customer_address || 'Avadi Area'} (<b>~${dist} km away</b>)</p>
+                    <p style="font-size: 13px; color: var(--text-muted);">Payout: ₹${o.amount} (Cooperative 98% share: ₹${Math.round(o.amount * 0.98)})</p>
+                  </div>
+                  <div>
+                    <button class="btn btn-success" onclick="updateOrderStatus(${o.id}, 'Accepted')">Accept</button>
+                    <button class="btn btn-danger" style="margin-left: 6px;" onclick="updateOrderStatus(${o.id}, 'Rejected')">Reject</button>
+                  </div>
                 </div>
-              ` : ''}
-              <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
-                Payout: ₹${o.amount} &bull; Status: <span class="badge badge-${o.status.toLowerCase()}">${o.status}</span>
+              </div>
+            `;
+          }).join('');
+        }
+
+        const histDiv = document.getElementById('provider-history');
+        if (activeOrCompleted.length === 0) {
+          histDiv.innerHTML = `<p style="color: var(--text-muted); font-size: 13px;">No past jobs.</p>`;
+        } else {
+          histDiv.innerHTML = activeOrCompleted.map(o => `
+            <div class="order-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-size: 16px; font-weight: 600;">${o.customer_name} • ${o.service}</div>
+                  <div style="font-size: 13px; color: var(--text-muted); margin-top: 3px;">📍 ${o.customer_address || 'Avadi Area'}</div>
+                  <div style="font-size: 13px; margin-top: 4px;">
+                    📞 <b>Customer Contact:</b> <a href="tel:${o.customer_phone || '9840112233'}" style="color: #2563eb; font-weight: 600; text-decoration: none;">${o.customer_phone || '9840112233'}</a>
+                  </div>
+                  <div style="font-size: 13px; color: #15803d; font-weight: 600; margin-top: 3px;">Rate: ₹${o.amount} (Net Payout: ₹${Math.round(o.amount * 0.98)})</div>
+                </div>
+                <div style="text-align: right;">
+                  <span class="badge ${o.status === 'Completed' || o.status === 'Rated' ? 'badge-success' : 'badge-warning'}">${o.status}</span>
+                  ${o.status === 'Accepted' ? `
+                    <div style="margin-top: 8px;">
+                      <button class="btn btn-success" style="font-size: 12px; padding: 6px 12px;" onclick="promptVerifyOtp(${o.id}, '${o.otp}')">Complete Job (Verify OTP)</button>
+                    </div>
+                  ` : ''}
+                </div>
               </div>
             </div>
-            <div id="prov-actions-${o.id}">
-              ${o.status === 'Pending' ? `
-                <button class="btn-green" onclick="setOrderStatus(${o.id}, 'Accepted')">Accept & View Route</button>
-                <button class="btn-danger" onclick="setOrderStatus(${o.id}, 'Rejected')">Reject</button>
-              ` : ''}
-              ${o.status === 'Accepted' ? `
-                <button class="btn-primary" onclick="verifyCompletion(${o.id})">Verify OTP & Complete</button>
-              ` : ''}
-            </div>
-          </div>
-          <div id="map-prov-${o.id}" class="map-box" style="display: ${o.status === 'Accepted' ? 'block' : 'none'};"></div>
-        `;
-
-        if (o.status === 'Accepted' && o.customer_lat && o.customer_lng) {
-          if (!activeLeafletMaps[`prov-${o.id}`]) {
-            const destPos = [o.customer_lat, o.customer_lng];
-            const startPos = [o.customer_lat - 0.007, o.customer_lng - 0.005];
-
-            const map = L.map(`map-prov-${o.id}`).setView(destPos, 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-            L.marker(destPos).addTo(map).bindPopup(`📍 Destination: ${o.customer_name}'s Address`).openPopup();
-            
-            const provWorkerMarker = L.marker(startPos).addTo(map).bindPopup("🚗 Your Current Transit Location");
-            const routeLine = L.polyline([startPos, destPos], { color: '#16a34a', weight: 4, opacity: 0.8 }).addTo(map);
-
-            activeLeafletMaps[`prov-${o.id}`] = map;
-            activeMarkers[`prov-worker-${o.id}`] = provWorkerMarker;
-            activePolylines[`prov-line-${o.id}`] = routeLine;
-
-            streamWorkerLocation(o.id, o.customer_lat, o.customer_lng);
-          }
+          `).join('');
         }
-      });
+      } catch (err) {
+        console.error(err);
+      }
     }
 
-    function streamWorkerLocation(orderId, destLat, destLng) {
-      let currentLat = destLat - 0.007;
-      let currentLng = destLng - 0.005;
-      const destPos = [destLat, destLng];
+    async function promptVerifyOtp(orderId, expectedOtp) {
+      const inputOtp = prompt("Ask customer for their 4-digit Completion OTP:");
+      if (!inputOtp) return;
 
-      const trackInterval = setInterval(async () => {
-        currentLat += (destLat - currentLat) * 0.12;
-        currentLng += (destLng - currentLng) * 0.12;
-        const currentPos = [currentLat, currentLng];
-
-        if (activeMarkers[`prov-worker-${orderId}`]) {
-          activeMarkers[`prov-worker-${orderId}`].setLatLng(currentPos);
-        }
-        if (activePolylines[`prov-line-${orderId}`]) {
-          activePolylines[`prov-line-${orderId}`].setLatLngs([currentPos, destPos]);
-        }
-
-        await fetch('/api/orders/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ order_id: orderId, provider_lat: currentLat, provider_lng: currentLng })
-        });
-
-        if (Math.abs(destLat - currentLat) < 0.0001 && Math.abs(destLng - currentLng) < 0.0001) {
-          clearInterval(trackInterval);
-        }
-      }, 2000);
+      if (inputOtp.trim() === expectedOtp.trim()) {
+        await updateOrderStatus(orderId, 'Completed');
+        alert("✅ OTP verified successfully! Job marked Completed and earnings credited.");
+      } else {
+        alert("❌ Invalid OTP! Please check with customer and try again.");
+      }
     }
 
-    async function setOrderStatus(id, status) {
+    async function updateOrderStatus(orderId, status) {
       await fetch('/api/orders/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_id: id, status })
+        body: JSON.stringify({ order_id: orderId, status })
       });
       fetchProviderOrders();
     }
 
-    async function verifyCompletion(id) {
-      const otp = prompt('Enter customer 4-digit OTP:');
-      if (!otp) return;
-      const res = await fetch('/api/orders/complete', {
+    async function toggleDuty() {
+      const nextStatus = currentUser.is_available === 1 ? 0 : 1;
+      await fetch('/api/providers/duty', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_id: id, otp })
+        body: JSON.stringify({ id: currentUser.id, is_available: nextStatus })
       });
-      const data = await res.json();
-      if (data.error) showToast(data.error);
-      else {
-        showToast(data.message);
-        fetchProviderOrders();
+      currentUser.is_available = nextStatus;
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      updateDutyButton(nextStatus);
+    }
+
+    function updateDutyButton(isAvail) {
+      const btn = document.getElementById('duty-btn');
+      if (isAvail === 1) {
+        btn.textContent = '🟢 Duty: Available';
+        btn.className = 'btn btn-success';
+      } else {
+        btn.textContent = '🔴 Duty: Off';
+        btn.className = 'btn btn-secondary';
       }
     }
 
@@ -947,59 +667,65 @@
       const res = await fetch('/api/admin/metrics');
       const data = await res.json();
 
-      document.getElementById('adm-gmv').innerText = '₹' + data.grossVolume;
-      document.getElementById('adm-welfare').innerText = '₹' + data.totalWelfareFund;
-      document.getElementById('adm-payout').innerText = '₹' + data.totalWorkerPayout;
-      
-      const kycRate = data.totalWorkers ? Math.round((data.verifiedWorkers / data.totalWorkers) * 100) : 0;
-      document.getElementById('adm-kyc').innerText = `${kycRate}% (${data.verifiedWorkers}/${data.totalWorkers})`;
+      document.getElementById('metric-gmv').textContent = `₹${data.grossVolume}`;
+      document.getElementById('metric-escrow').textContent = `₹${data.totalWelfareFund}`;
+      document.getElementById('metric-payout').textContent = `₹${data.totalWorkerPayout}`;
+      const kycPct = data.totalWorkers > 0 ? Math.round((data.verifiedWorkers / data.totalWorkers) * 100) : 100;
+      document.getElementById('metric-kyc').textContent = `${kycPct}% (${data.verifiedWorkers}/${data.totalWorkers})`;
 
-      const wBody = document.getElementById('adm-workers-tbody');
-      wBody.innerHTML = data.workerWorkloads.map(w => `
+      const wTbody = document.querySelector('#workload-table tbody');
+      wTbody.innerHTML = data.workerWorkloads.map(w => `
         <tr>
-          <td><strong>${w.name}</strong></td>
-          <td>${w.service || '-'} &bull; 📍 ${w.area || 'Avadi'}</td>
-          <td>${w.is_available === 1 ? '<span style="color:#16a34a; font-weight:bold;">🟢 Online</span>' : '<span style="color:#dc2626; font-weight:bold;">🔴 Off Duty</span>'}</td>
-          <td>${w.is_verified ? `<span class="badge badge-verified">🛡️ Verified</span>` : '<span class="badge badge-rejected">Pending</span>'}</td>
-          <td>₹${w.base_rate || 250}</td>
-          <td><span style="color: #ca8a04; font-weight: bold;">★ ${w.rating || 5.0}</span></td>
+          <td><b>${w.name}</b></td>
+          <td>${w.service} • 📍 ${w.area}</td>
+          <td>${w.is_available ? '🟢 Online' : '🔴 Off'}</td>
+          <td><span class="badge ${w.is_verified ? 'badge-success' : 'badge-warning'}">${w.is_verified ? 'Verified' : 'Pending'}</span></td>
+          <td>₹${w.base_rate}</td>
+          <td>★ ${w.rating || 5.0}</td>
           <td>${w.completed_jobs}</td>
-          <td style="color: #16a34a; font-weight: bold;">₹${Math.round(w.total_earned * 0.98)}</td>
+          <td style="color: #15803d; font-weight: 600;">₹${Math.round(w.total_earned * 0.98)}</td>
         </tr>
       `).join('');
 
-      const oBody = document.getElementById('adm-orders-tbody');
-      oBody.innerHTML = data.auditLogs.map(o => `
+      const lTbody = document.querySelector('#ledger-table tbody');
+      lTbody.innerHTML = data.auditLogs.map(o => `
         <tr>
           <td>#${o.id}</td>
-          <td style="color: #64748b;">${o.created_at || 'Recent'}</td>
           <td>${o.customer_name}</td>
           <td>${o.provider_name}</td>
           <td>${o.service}</td>
           <td>₹${o.amount}</td>
-          <td><span class="badge badge-${o.status.toLowerCase()}">${o.status}</span></td>
+          <td><span class="badge ${o.status === 'Completed' || o.status === 'Rated' ? 'badge-success' : 'badge-warning'}">${o.status}</span></td>
         </tr>
       `).join('');
     }
 
     function closeAdminAudit() {
-      document.getElementById('admin-view').style.display = 'none';
       if (currentUser) loadDashboard();
-      else document.getElementById('auth-view').style.display = 'block';
+      else {
+        document.getElementById('admin-view').style.display = 'none';
+        document.getElementById('auth-view').style.display = 'block';
+      }
     }
+
+    function toggleLanguage() {
+      alert('Tamil localization active: ஆவடி தொழிலாளர் கூட்டுறவு தளம்');
+    }
+
+    setInterval(() => {
+      if (currentUser) {
+        if (currentUser.role === 'customer') {
+          fetchCustomerOrders();
+        } else if (currentUser.role === 'provider') {
+          fetchProviderOrders();
+        }
+      }
+    }, 5000);
 
     if (currentUser) {
       loadDashboard();
-      startAutoSync();
-    }
-  </script>
-
-  <!-- PWA Service Worker Registration -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(() => console.log('PWA Service Worker registered'))
-        .catch((err) => console.log('SW registration failed:', err));
+    } else {
+      showLoginForm();
     }
   </script>
 </body>

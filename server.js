@@ -1,34 +1,32 @@
 const express = require('express');
-const cors = require('cors');
 const Database = require('better-sqlite3');
+const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const db = new Database('cooperative.db');
-
-app.use(cors());
 app.use(express.json());
+app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Initialize database tables with schema migrations
+// Database setup
+const db = new Database(path.join(__dirname, 'cooperative.db'));
+
+// Base tables
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    phone TEXT,
-    address TEXT,
     role TEXT NOT NULL,
+    phone TEXT,
     service TEXT,
     area TEXT,
+    address TEXT,
     base_rate INTEGER DEFAULT 250,
-    is_available INTEGER DEFAULT 1,
     rating REAL DEFAULT 5.0,
-    rating_count INTEGER DEFAULT 1,
+    is_available INTEGER DEFAULT 1,
+    is_verified INTEGER DEFAULT 1,
     jobs_today INTEGER DEFAULT 0,
-    is_verified INTEGER DEFAULT 0,
-    id_type TEXT,
-    id_number_masked TEXT,
     lat REAL,
     lng REAL
   );
@@ -39,220 +37,227 @@ db.exec(`
     customer_name TEXT,
     customer_phone TEXT,
     customer_address TEXT,
+    client_lat REAL,
+    client_lng REAL,
     provider_id INTEGER,
     provider_name TEXT,
     service TEXT,
-    amount INTEGER,
-    status TEXT DEFAULT 'Pending',
+    amount INTEGER DEFAULT 250,
     otp TEXT,
-    customer_lat REAL,
-    customer_lng REAL,
-    provider_lat REAL,
-    provider_lng REAL,
-    rating INTEGER,
+    status TEXT DEFAULT 'Requested',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);
 
-// Safe column migrations in case older cooperative.db exists
+// Auto-migrate missing columns safely
 const userCols = db.prepare(`PRAGMA table_info(users)`).all().map(c => c.name);
-if (!userCols.includes('phone')) db.prepare(`ALTER TABLE users ADD COLUMN phone TEXT`).run();
-if (!userCols.includes('address')) db.prepare(`ALTER TABLE users ADD COLUMN address TEXT`).run();
-if (!userCols.includes('lat')) db.prepare(`ALTER TABLE users ADD COLUMN lat REAL`).run();
-if (!userCols.includes('lng')) db.prepare(`ALTER TABLE users ADD COLUMN lng REAL`).run();
+if (!userCols.includes('phone')) db.exec(`ALTER TABLE users ADD COLUMN phone TEXT;`);
+if (!userCols.includes('address')) db.exec(`ALTER TABLE users ADD COLUMN address TEXT;`);
+if (!userCols.includes('rating')) db.exec(`ALTER TABLE users ADD COLUMN rating REAL DEFAULT 5.0;`);
+if (!userCols.includes('base_rate')) db.exec(`ALTER TABLE users ADD COLUMN base_rate INTEGER DEFAULT 250;`);
+if (!userCols.includes('is_available')) db.exec(`ALTER TABLE users ADD COLUMN is_available INTEGER DEFAULT 1;`);
+if (!userCols.includes('is_verified')) db.exec(`ALTER TABLE users ADD COLUMN is_verified INTEGER DEFAULT 1;`);
+if (!userCols.includes('jobs_today')) db.exec(`ALTER TABLE users ADD COLUMN jobs_today INTEGER DEFAULT 0;`);
+if (!userCols.includes('lat')) db.exec(`ALTER TABLE users ADD COLUMN lat REAL;`);
+if (!userCols.includes('lng')) db.exec(`ALTER TABLE users ADD COLUMN lng REAL;`);
 
 const orderCols = db.prepare(`PRAGMA table_info(orders)`).all().map(c => c.name);
-if (!orderCols.includes('customer_phone')) db.prepare(`ALTER TABLE orders ADD COLUMN customer_phone TEXT`).run();
-if (!orderCols.includes('customer_address')) db.prepare(`ALTER TABLE orders ADD COLUMN customer_address TEXT`).run();
+if (!orderCols.includes('customer_phone')) db.exec(`ALTER TABLE orders ADD COLUMN customer_phone TEXT;`);
+if (!orderCols.includes('customer_address')) db.exec(`ALTER TABLE orders ADD COLUMN customer_address TEXT;`);
+if (!orderCols.includes('client_lat')) db.exec(`ALTER TABLE orders ADD COLUMN client_lat REAL;`);
+if (!orderCols.includes('client_lng')) db.exec(`ALTER TABLE orders ADD COLUMN client_lng REAL;`);
+if (!orderCols.includes('amount')) db.exec(`ALTER TABLE orders ADD COLUMN amount INTEGER DEFAULT 250;`);
 
-// Seed initial verified workers if table is empty
-const workerCount = db.prepare(`SELECT COUNT(*) AS count FROM users WHERE role = 'provider'`).get().count;
-if (workerCount === 0) {
-  const seed = db.prepare(`
-    INSERT INTO users (name, email, phone, role, service, area, base_rate, is_available, rating, rating_count, jobs_today, is_verified, id_type, id_number_masked, lat, lng)
-    VALUES (?, ?, ?, 'provider', ?, ?, ?, 1, ?, ?, 0, 1, 'aadhaar', 'XXXX-XXXX-8921', ?, ?)
-  `);
-  seed.run('Kiran S.', 'kiran@avadi.com', '9876543210', 'Electrician', 'Gandhi Nagar', 300, 4.8, 12, 13.1256, 80.1085);
-  seed.run('Karthi Ram', 'karthi@avadi.com', '9876543211', 'Plumber', 'Avadi Checkpost', 250, 4.9, 9, 13.1189, 80.1018);
-  seed.run('Megaganath V.', 'mega@avadi.com', '9876543212', 'Plumber', 'Gandhi Nagar', 250, 5.0, 5, 13.1270, 80.1100);
-}
-
-// Background cleaner: auto-expire orders pending > 90 seconds
+// Background: 90-second auto-expiry
 setInterval(() => {
   try {
-    db.prepare(`
-      UPDATE orders 
-      SET status = 'Expired' 
-      WHERE status = 'Pending' 
-      AND (strftime('%s', 'now') - strftime('%s', created_at)) > 90
-    `).run();
-  } catch (err) {
-    console.error('Timeout check error:', err);
-  }
-}, 3000);
+    const expiredOrders = db.prepare(`
+      SELECT id, strftime('%s', 'now') - strftime('%s', created_at) AS elapsed
+      FROM orders
+      WHERE status = 'Requested'
+    `).all();
 
-// API: Register
-app.post('/api/register', (req, res) => {
-  const { name, email, phone, address, role, service, area, base_rate, id_type, id_number, lat, lng } = req.body;
-  try {
-    let masked = null;
-    let verified = 0;
-    if (role === 'provider' && id_number) {
-      masked = id_number.length > 4 ? 'XXXX-XXXX-' + id_number.slice(-4) : id_number;
-      verified = 1;
+    for (const ord of expiredOrders) {
+      if (ord.elapsed >= 90) {
+        db.prepare(`UPDATE orders SET status = 'Expired' WHERE id = ?`).run(ord.id);
+      }
     }
-
-    const stmt = db.prepare(`
-      INSERT INTO users (name, email, phone, address, role, service, area, base_rate, is_verified, id_type, id_number_masked, lat, lng)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    const info = stmt.run(name, email, phone || null, address || null, role, service || null, area || null, base_rate || 250, verified, id_type || null, masked, lat || null, lng || null);
-    
-    const user = db.prepare(`SELECT * FROM users WHERE id = ?`).get(info.lastInsertRowid);
-    res.json(user);
   } catch (err) {
-    res.status(400).json({ error: 'Email already registered or invalid entry' });
+    console.error('Timeout check error:', err.message);
+  }
+}, 5000);
+
+// --- AUTH ROUTES ---
+
+app.post('/api/auth/login', (req, res) => {
+  const { email } = req.body;
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  if (user) {
+    res.json({ success: true, user });
+  } else {
+    res.status(401).json({ success: false, message: 'User not found' });
   }
 });
 
-// API: Login
-app.post('/api/login', (req, res) => {
-  const { email } = req.body;
-  const user = db.prepare(`SELECT * FROM users WHERE email = ?`).get(email);
-  if (!user) return res.status(404).json({ error: 'User not found. Please register first.' });
-  res.json(user);
+app.post('/api/auth/register', (req, res) => {
+  const { name, email, role, phone, service, area, address, base_rate, lat, lng } = req.body;
+  try {
+    const info = db.prepare(`
+      INSERT INTO users (name, email, role, phone, service, area, address, base_rate, lat, lng, is_available, is_verified, jobs_today, rating)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 0, 5.0)
+    `).run(name, email, role, phone || '', service || null, area || 'Avadi', address || '', base_rate || 250, lat || 13.1147, lng || 80.1018);
+
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
 });
 
-// API: Get Providers list
+// --- PROVIDER ROUTES ---
+
 app.get('/api/providers', (req, res) => {
-  const providers = db.prepare(`
-    SELECT id, name, phone, service, area, base_rate, rating, is_available, jobs_today, is_verified, lat, lng
-    FROM users 
-    WHERE role = 'provider'
-  `).all();
-  res.json(providers);
+  try {
+    const providers = db.prepare(`
+      SELECT id, name, phone, service, area, address,
+             COALESCE(base_rate, 250) AS base_rate,
+             COALESCE(rating, 5.0) AS rating,
+             COALESCE(is_available, 1) AS is_available,
+             COALESCE(is_verified, 1) AS is_verified,
+             COALESCE(jobs_today, 0) AS jobs_today,
+             lat, lng
+      FROM users
+      WHERE role = 'provider'
+    `).all();
+    res.json(providers);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// API: Provider rate update
-app.post('/api/provider/rate', (req, res) => {
-  const { provider_id, base_rate } = req.body;
-  db.prepare(`UPDATE users SET base_rate = ? WHERE id = ?`).run(base_rate, provider_id);
-  res.json({ success: true, base_rate });
+app.post('/api/providers/duty', (req, res) => {
+  const { id, is_available } = req.body;
+  db.prepare('UPDATE users SET is_available = ? WHERE id = ?').run(is_available ? 1 : 0, id);
+  res.json({ success: true });
 });
 
-// API: Provider availability toggle
-app.post('/api/provider/availability', (req, res) => {
-  const { provider_id, is_available } = req.body;
-  db.prepare(`UPDATE users SET is_available = ? WHERE id = ?`).run(is_available ? 1 : 0, provider_id);
-  res.json({ success: true, is_available });
-});
+// --- ORDER ROUTES ---
 
-// API: Create Booking
-app.post('/api/book', (req, res) => {
-  const { customer_id, customer_name, customer_phone, customer_address, provider_id, provider_name, service, customer_lat, customer_lng } = req.body;
-  
-  const provider = db.prepare(`SELECT base_rate, lat, lng FROM users WHERE id = ?`).get(provider_id);
-  const amount = provider ? provider.base_rate : 250;
+app.post('/api/orders/create', (req, res) => {
+  const { customer_id, customer_name, customer_phone, customer_address, client_lat, client_lng, provider_id, provider_name, service, amount } = req.body;
   const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
-  const stmt = db.prepare(`
-    INSERT INTO orders (customer_id, customer_name, customer_phone, customer_address, provider_id, provider_name, service, amount, status, otp, customer_lat, customer_lng, provider_lat, provider_lng)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?, ?, ?, ?)
-  `);
+  const info = db.prepare(`
+    INSERT INTO orders (customer_id, customer_name, customer_phone, customer_address, client_lat, client_lng, provider_id, provider_name, service, amount, otp, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Requested')
+  `).run(customer_id, customer_name, customer_phone, customer_address, client_lat, client_lng, provider_id, provider_name, service, amount || 250, otp);
 
-  const info = stmt.run(
-    customer_id, customer_name, customer_phone || 'Not given', customer_address || 'Avadi Area',
-    provider_id, provider_name, service, amount, otp,
-    customer_lat, customer_lng, provider?.lat || null, provider?.lng || null
-  );
-
-  res.json({ success: true, orderId: info.lastInsertRowid, message: 'Booking requested! Waiting for worker response (90s window).' });
+  res.json({ success: true, orderId: info.lastInsertRowid });
 });
 
-// API: Customer Orders
-app.get('/api/orders/customer/:id', (req, res) => {
-  const orders = db.prepare(`
-    SELECT * FROM orders 
-    WHERE customer_id = ? 
-    ORDER BY id DESC
-  `).all(req.params.id);
-  res.json(orders);
-});
-
-// API: Provider Orders
 app.get('/api/orders/provider/:id', (req, res) => {
+  try {
+    const orders = db.prepare(`SELECT * FROM orders WHERE provider_id = ? ORDER BY id DESC`).all(req.params.id);
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/orders/customer/:id', (req, res) => {
+  try {
+    const orders = db.prepare(`SELECT * FROM orders WHERE customer_id = ? ORDER BY id DESC`).all(req.params.id);
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/orders/user/:id', (req, res) => {
+  const uid = req.params.id;
   const orders = db.prepare(`
-    SELECT * FROM orders 
-    WHERE provider_id = ? 
+    SELECT * FROM orders
+    WHERE customer_id = ? OR provider_id = ?
     ORDER BY id DESC
-  `).all(req.params.id);
+  `).all(uid, uid);
   res.json(orders);
 });
 
-// API: Order Status Transition
 app.post('/api/orders/status', (req, res) => {
   const { order_id, status } = req.body;
-  db.prepare(`UPDATE orders SET status = ? WHERE id = ?`).run(status, order_id);
-  res.json({ success: true, status });
-});
+  db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, order_id);
 
-// API: Complete Order via OTP
-app.post('/api/orders/complete', (req, res) => {
-  const { order_id, otp } = req.body;
-  const order = db.prepare(`SELECT * FROM orders WHERE id = ?`).get(order_id);
-  if (!order) return res.status(404).json({ error: 'Order not found' });
-  if (order.otp !== otp.trim()) return res.status(400).json({ error: 'Incorrect OTP entered.' });
-
-  db.prepare(`UPDATE orders SET status = 'Completed' WHERE id = ?`).run(order_id);
-  db.prepare(`UPDATE users SET jobs_today = jobs_today + 1 WHERE id = ?`).run(order.provider_id);
-  res.json({ success: true, message: 'Job successfully verified & completed!' });
-});
-
-// API: Worker Tracking Stream
-app.post('/api/orders/track', (req, res) => {
-  const { order_id, provider_lat, provider_lng } = req.body;
-  db.prepare(`UPDATE orders SET provider_lat = ?, provider_lng = ? WHERE id = ?`).run(provider_lat, provider_lng, order_id);
-  res.json({ success: true });
-});
-
-// API: Rate Order
-app.post('/api/orders/rate', (req, res) => {
-  const { order_id, provider_id, rating } = req.body;
-  db.prepare(`UPDATE orders SET rating = ? WHERE id = ?`).run(rating, order_id);
-  
-  const p = db.prepare(`SELECT rating, rating_count FROM users WHERE id = ?`).get(provider_id);
-  if (p) {
-    const newCount = (p.rating_count || 0) + 1;
-    const newAvg = Number((((p.rating * (newCount - 1)) + rating) / newCount).toFixed(1));
-    db.prepare(`UPDATE users SET rating = ?, rating_count = ? WHERE id = ?`).run(newAvg, newCount, provider_id);
+  if (status === 'Completed') {
+    const ord = db.prepare('SELECT provider_id FROM orders WHERE id = ?').get(order_id);
+    if (ord && ord.provider_id) {
+      db.prepare('UPDATE users SET jobs_today = COALESCE(jobs_today, 0) + 1 WHERE id = ?').run(ord.provider_id);
+    }
   }
   res.json({ success: true });
 });
 
-// API: Federation Metrics
-app.get('/api/admin/metrics', (req, res) => {
-  const orders = db.prepare(`SELECT * FROM orders ORDER BY id DESC`).all();
-  const completed = orders.filter(o => o.status === 'Completed');
-  const gmv = completed.reduce((sum, o) => sum + (o.amount || 0), 0);
-  const workers = db.prepare(`
-    SELECT u.id, u.name, u.service, u.area, u.base_rate, u.rating, u.is_available, u.is_verified,
-           COUNT(o.id) as completed_jobs,
-           COALESCE(SUM(o.amount), 0) as total_earned
-    FROM users u
-    LEFT JOIN orders o ON u.id = o.provider_id AND o.status = 'Completed'
-    WHERE u.role = 'provider'
-    GROUP BY u.id
-  `).all();
+// Rate provider & update running average rating
+app.post('/api/orders/rate', (req, res) => {
+  const { order_id, rating } = req.body;
+  const numRating = parseFloat(rating);
 
-  res.json({
-    grossVolume: gmv,
-    totalWelfareFund: Math.round(gmv * 0.02),
-    totalWorkerPayout: Math.round(gmv * 0.98),
-    totalWorkers: workers.length,
-    verifiedWorkers: workers.filter(w => w.is_verified === 1).length,
-    workerWorkloads: workers,
-    auditLogs: orders
-  });
+  if (isNaN(numRating) || numRating < 1 || numRating > 5) {
+    return res.status(400).json({ success: false, message: 'Rating must be between 1 and 5' });
+  }
+
+  try {
+    const order = db.prepare('SELECT provider_id FROM orders WHERE id = ?').get(order_id);
+    if (!order || !order.provider_id) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    db.prepare(`
+      UPDATE users 
+      SET rating = ROUND((COALESCE(rating, 5.0) + ?) / 2.0, 1)
+      WHERE id = ?
+    `).run(numRating, order.provider_id);
+
+    db.prepare(`UPDATE orders SET status = 'Rated' WHERE id = ?`).run(order_id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// --- ADMIN AUDIT ROUTE ---
+
+app.get('/api/admin/metrics', (req, res) => {
+  try {
+    const orders = db.prepare('SELECT * FROM orders ORDER BY id DESC').all();
+    const completed = orders.filter(o => o.status === 'Completed' || o.status === 'Rated');
+    const gmv = completed.reduce((sum, o) => sum + (o.amount || 0), 0);
+
+    const workers = db.prepare(`
+      SELECT u.id, u.name, u.service, u.area, 
+             COALESCE(u.base_rate, 250) AS base_rate, 
+             COALESCE(u.rating, 5.0) AS rating, 
+             COALESCE(u.is_available, 1) AS is_available, 
+             COALESCE(u.is_verified, 1) AS is_verified,
+             COUNT(o.id) AS completed_jobs,
+             COALESCE(SUM(o.amount), 0) AS total_earned
+      FROM users u
+      LEFT JOIN orders o ON u.id = o.provider_id AND (o.status = 'Completed' OR o.status = 'Rated')
+      WHERE u.role = 'provider'
+      GROUP BY u.id
+    `).all();
+
+    res.json({
+      grossVolume: gmv,
+      totalWelfareFund: Math.round(gmv * 0.02),
+      totalWorkerPayout: Math.round(gmv * 0.98),
+      totalWorkers: workers.length,
+      verifiedWorkers: workers.filter(w => w.is_verified === 1).length,
+      workerWorkloads: workers,
+      auditLogs: orders
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 const PORT = 3000;
